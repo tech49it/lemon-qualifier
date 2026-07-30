@@ -190,8 +190,70 @@ check('doc request: text draft is non-empty and under 320 chars',
   textDraft.length > 0 && textDraft.length <= 320);
 
 
+/* ===================== v1.2.1 — summary swing factor / facts ============== */
+
+var CFG = R.RULES_CONFIG;
+
+/* Swing-factor selection */
+check('swing: safety-unsure with sufficient attempts',
+  L.swingFactor(byId['case-borderline'], R.evaluateCase(byId['case-borderline'], CFG), CFG).key === 'safety');
+
+var cW = JSON.parse(JSON.stringify(byId['case-strong'])); cW.warranty.active = 'unsure';
+check('swing: warranty unconfirmed',
+  L.swingFactor(cW, R.evaluateCase(cW, CFG), CFG).key === 'warranty');
+
+var cU = JSON.parse(JSON.stringify(byId['case-notqualified'])); cU.warranty.warrantyIssuedAtSale = 'unsure';
+check('swing: used vehicle warranty-at-sale unconfirmed',
+  L.swingFactor(cU, R.evaluateCase(cU, CFG), CFG).key === 'usedWarranty');
+
+var nearCase = {
+  contact: { name: 'Test' },
+  vehicle: { year: '2025', make: 'Chevrolet', model: 'X', condition: 'new', purchaseType: 'purchase',
+    purchaseDate: '2025-01-01', mileageAtPurchase: '10', currentMileage: '5000' },
+  warranty: { active: 'yes', expirationDate: '2028-01-01', warrantyIssuedAtSale: 'yes' },
+  problem: { description: 'x', safetyRelated: 'no' },
+  repairs: [
+    { dateIn: '2025-03-01', dateOut: '2025-03-01', samePrimaryDefect: true },
+    { dateIn: '2025-04-01', dateOut: '2025-04-01', samePrimaryDefect: true },
+    { dateIn: '2025-05-01', dateOut: '2025-05-01', samePrimaryDefect: true }
+  ]
+};
+check('swing: near-threshold attempts',
+  L.swingFactor(nearCase, R.evaluateCase(nearCase, CFG), CFG).key === 'nearAttempts');
+
+check('swing: null when no decisive unknown',
+  L.swingFactor(byId['case-notqualified'], R.evaluateCase(byId['case-notqualified'], CFG), CFG) === null);
+
+/* Pluralization helper */
+check('plur handles 0/1/2',
+  L.plur(0, 'day') === 'days' && L.plur(1, 'day') === 'day' && L.plur(2, 'day') === 'days');
+
+/* Summary for all three sample cases: screen result + caveat + no legal conclusion */
+['case-strong', 'case-borderline', 'case-notqualified'].forEach(function (id) {
+  var c = byId[id];
+  var a = R.evaluateCase(c, CFG);
+  a.procedural = R.resolveTrack(c, CFG);
+  var s = L.buildMockSummary(c, a, CFG);
+  check(id + ': summary states the screen result', s.indexOf(a.verdictLabel) !== -1);
+  check(id + ': summary keeps the demo-threshold caveat',
+    s.indexOf('demo thresholds pending attorney validation') !== -1);
+  check(id + ': summary draws no legal conclusion',
+    !/guarantee|will win|is a lemon|definitely qualif/i.test(s));
+});
+
+/* Both mock variants carry the same required facts (swing factor + every flag) */
+var cB = byId['case-borderline'];
+var aB = R.evaluateCase(cB, CFG); aB.procedural = R.resolveTrack(cB, CFG);
+var sf = L.swingFactor(cB, aB, CFG);
+var b1 = L.buildMockSummary(cB, aB, CFG);
+var b2 = L.buildMockSummary(cB, aB, CFG);
+var reqFacts = [aB.verdictLabel, 'demo thresholds pending attorney validation', sf.text].concat(aB.flags);
+check('both mock variants carry swing factor and every flag',
+  reqFacts.every(function (f) { return b1.indexOf(f) !== -1 && b2.indexOf(f) !== -1; }) && b1 !== b2);
+
+
 /* v1.0 behaviour unchanged; version bumped */
-check('rules version bumped to 1.2', R.RULES_CONFIG.version === '1.2.0-demo');
+check('rules version bumped to 1.2.1', R.RULES_CONFIG.version === '1.2.1-demo');
 
 
 console.log(failures === 0 ? '\nAll checks passed.' : '\n' + failures + ' failure(s).');

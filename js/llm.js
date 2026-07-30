@@ -17,79 +17,239 @@
 
   var mockVariant = 0;
 
-  function fmtMiles(n) {
-    var v = Number(n);
-    return isNaN(v) ? '—' : v.toLocaleString();
+  var MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'];
+
+  /* Pluralization: singular only when n === 1. plur(0)/plur(2) -> plural. */
+  function plur(n, word, wordPlural) {
+    return n === 1 ? word : (wordPlural || word + 's');
+  }
+  function qty(n, word, wordPlural) {
+    return n + ' ' + plur(n, word, wordPlural);
   }
 
-  function buildMockSummary(caseData, assessment) {
-    mockVariant = (mockVariant + 1) % 2;
-    var v = caseData.vehicle;
-    var veh = [v.year, v.make, v.model].filter(Boolean).join(' ') || 'Vehicle (unspecified)';
+  /* ISO YYYY-MM-DD -> "January 20, 2025". Non-ISO input returned as-is. */
+  function proseDate(iso) {
+    if (!iso) return null;
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso).trim());
+    if (!m) return String(iso);
+    var mi = parseInt(m[2], 10) - 1;
+    if (mi < 0 || mi > 11) return String(iso);
+    return MONTH_NAMES[mi] + ' ' + parseInt(m[3], 10) + ', ' + m[1];
+  }
+
+  /* Comma-grouped integer, or null when unparseable/blank. */
+  function commaNum(n) {
+    if (n === '' || n === null || n === undefined) return null;
+    var v = Number(n);
+    return isNaN(v) ? null : v.toLocaleString('en-US');
+  }
+
+  function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+
+  function activeConfig(config) {
+    if (config) return config;
+    return (global.LemonRules && global.LemonRules.RULES_CONFIG) || null;
+  }
+
+  /**
+   * swingFactor(caseData, assessment, config) -> { key, text } | null
+   * Names the single unknown that would most change the outcome. Derived from
+   * the assessment and the configured thresholds — no new screening logic. When
+   * more than one applies, the most decisive is returned (priority order below).
+   */
+  function swingFactor(caseData, assessment, config) {
+    var cfg = activeConfig(config);
+    if (!cfg || !assessment || !assessment.computed) return null;
+    var problem = caseData.problem || {};
+    var warranty = caseData.warranty || {};
+    var vehicle = caseData.vehicle || {};
     var attempts = assessment.computed.attempts;
     var days = assessment.computed.daysOut;
-    var w = assessment.window;
+    var safetyT = cfg.criteria.safetyDefectAttempts.threshold;
+    var sameT = cfg.criteria.sameDefectAttempts.threshold;
+    var daysT = cfg.criteria.daysOutOfService.threshold;
+    var pA = cfg.promising.attemptsWithin;
+    var pD = cfg.promising.daysWithin;
 
-    var windowLine;
-    if (w.state === 'met') {
-      windowLine = 'First repair at ~' + w.monthsToFirstRepair + ' months / ' + fmtMiles(w.milesDeltaAtFirstRepair) +
-        ' miles from delivery — inside the ' + w.limitMonths + '-month / ' + fmtMiles(w.limitMiles) + '-mile presumption window (demo rule).';
-    } else if (w.state === 'missed') {
-      windowLine = 'First repair falls outside the ' + w.limitMonths + '-month / ' + fmtMiles(w.limitMiles) +
-        '-mile presumption window (demo rule) — presumption likely unavailable; claim viability is an attorney call.';
-    } else {
-      windowLine = 'Presumption window cannot be confirmed from current inputs — dates or mileage figures missing.';
+    /* 1 — safety classification unresolved, attempts already sufficient */
+    if (problem.safetyRelated === 'unsure' && attempts >= safetyT) {
+      var verb = attempts === 1 ? 'meets' : 'meet';
+      return { key: 'safety',
+        text: 'Swing factor: safety classification. If counsel finds this defect likely to cause death or serious injury, ' +
+          qty(attempts, 'attempt') + ' ' + verb + ' the ' + safetyT + '-attempt threshold and the case qualifies on the presumption.' };
     }
+    /* 2 — warranty status unconfirmed */
+    if (warranty.active === 'unsure') {
+      return { key: 'warranty',
+        text: 'Swing factor: warranty status. Coverage turns on the manufacturer warranty; confirm before attorney review.' };
+    }
+    /* 3 — used vehicle, warranty-at-sale unconfirmed */
+    if (vehicle.condition === 'used' && warranty.warrantyIssuedAtSale === 'unsure') {
+      return { key: 'usedWarranty',
+        text: 'Swing factor: whether a manufacturer warranty issued at sale. Post-Rodriguez this controls coverage.' };
+    }
+    /* 4 — within the promising margin of a threshold (attempts first, then days).
+       Only meaningful when the case does not already qualify; a STRONG case's
+       outcome does not turn on one more attempt, so no swing factor applies. */
+    if (assessment.verdict !== 'STRONG') {
+      var gapA = sameT - attempts;
+      if (gapA > 0 && attempts >= sameT - pA) {
+        return { key: 'nearAttempts',
+          text: 'Swing factor: ' + (gapA === 1 ? 'one further repair attempt' : gapA + ' further repair attempts') +
+            ' would meet the ' + sameT + '-attempt threshold.' };
+      }
+      var gapD = daysT - days;
+      if (gapD > 0 && days >= daysT - pD) {
+        return { key: 'nearDays',
+          text: 'Swing factor: ' + qty(gapD, 'more day') + ' out of service would meet the ' + daysT + '-day threshold.' };
+      }
+    }
+    return null;
+  }
 
-    var nextStep;
+  /* Fast-track SOL, formatted for prose. Returns null unless a date exists. */
+  function deadlineLine(assessment) {
+    var track = assessment.procedural;
+    var deadlines = assessment.deadlines;
+    if (!track || track.status !== 'fast_track' || !deadlines) return null;
+    var sol = null;
+    for (var i = 0; i < deadlines.length; i++) {
+      if (deadlines[i].id === 'sol') { sol = deadlines[i]; break; }
+    }
+    if (!sol || !sol.date) return null;
+    var rem = sol.daysRemaining;
+    var remText = rem < 0
+      ? 'passed ' + qty(Math.abs(rem), 'day') + ' ago'
+      : qty(rem, 'day') + ' remaining';
+    var m = /^Controlled by (.+?)\./.exec(sol.basis || '');
+    var ctl = m ? m[1] : (sol.basis || 'configured rule');
+    var prefix = (sol.severity === 'warning' || sol.severity === 'critical') ? 'TIME-SENSITIVE — ' : '';
+    return prefix + 'Statute of limitations ' + proseDate(sol.date) + ' (' + remText + '), controlled by ' + ctl;
+  }
+
+  function nextStepFor(assessment) {
     if (assessment.verdict === 'STRONG') {
-      nextStep = 'Route to attorney review for engagement decision. Collect the checklist items marked missing before the call.';
-    } else if (assessment.verdict === 'PROMISING') {
-      nextStep = 'Hold for documentation. Request the items marked missing (repair orders, warranty booklet), then re-run assessment before attorney review.';
-    } else {
-      nextStep = 'Attorney to confirm decline. If declining, send the standard non-engagement letter (demo placeholder).';
+      return 'Route to attorney review for the engagement decision. Collect the checklist items marked missing before the call.';
     }
+    if (assessment.verdict === 'PROMISING') {
+      return 'Hold for documentation. Request the items marked missing (repair orders, warranty booklet), then re-run the assessment before attorney review.';
+    }
+    return 'Attorney to confirm the decline. If declining, send the standard non-engagement letter (demo placeholder).';
+  }
 
-    var lines;
+  function windowLineFor(w) {
+    if (w.state === 'met') {
+      return 'First repair at about ' + qty(w.monthsToFirstRepair, 'month') + ' and ' +
+        (commaNum(w.milesDeltaAtFirstRepair) || '—') + ' miles from delivery — inside the ' +
+        w.limitMonths + '-month / ' + (commaNum(w.limitMiles) || w.limitMiles) + '-mile presumption window (demo rule)';
+    }
+    if (w.state === 'missed') {
+      return 'First repair falls outside the ' + w.limitMonths + '-month / ' + (commaNum(w.limitMiles) || w.limitMiles) +
+        '-mile presumption window (demo rule) — presumption likely unavailable; claim viability is an attorney call';
+    }
+    return 'Presumption window cannot be confirmed from current inputs — dates or mileage figures are missing';
+  }
+
+  function buildMockSummary(caseData, assessment, config) {
+    mockVariant = (mockVariant + 1) % 2;
+    var v = caseData.vehicle || {};
+    var contact = caseData.contact || {};
+    var problem = caseData.problem || {};
+    var warranty = caseData.warranty || {};
+
+    var veh = [v.year, v.make, v.model].filter(Boolean).join(' ') || 'Vehicle (unspecified)';
+    var acquired = v.purchaseType === 'lease' ? 'Leased' : v.purchaseType === 'purchase' ? 'Purchased' : null;
+    var attempts = assessment.computed.attempts;
+    var days = assessment.computed.daysOut;
+
+    var delivered = proseDate(v.purchaseDate);
+    var mileDelivery = commaNum(v.mileageAtPurchase);
+    var mileCurrent = commaNum(v.currentMileage);
+    var window = windowLineFor(assessment.window);
+
+    var swing = swingFactor(caseData, assessment, config);
+    var deadline = deadlineLine(assessment);
+    var flags = assessment.flags || [];
+    var caveat = 'rules v' + assessment.audit.ruleVersion + ', demo thresholds pending attorney validation';
+    var screen = assessment.verdictLabel;
+    var procedural = assessment.procedural
+      ? assessment.procedural.label + (assessment.procedural.detail ? ' — ' + assessment.procedural.detail : '')
+      : null;
+    var nextStep = nextStepFor(assessment);
+
+    var contactBits = [];
+    if (contact.name) contactBits.push(contact.name);
+    if (contact.phone) contactBits.push(contact.phone);
+    if (contact.city) contactBits.push(contact.city);
+    var contactLine = contactBits.length ? 'Contact: ' + contactBits.join(' · ') : null;
+
+    var mileTail = (mileDelivery ? mileDelivery + ' miles at delivery' : null);
+    if (mileCurrent) mileTail = (mileTail ? mileTail + ', ' : '') + mileCurrent + ' miles now';
+
+    var lines = [];
+    function push(s) { lines.push(s); }
+
     if (mockVariant === 0) {
-      lines = [
-        'INTAKE SUMMARY — ' + (caseData.contact.name || 'Prospective client'),
-        '',
-        'Vehicle: ' + veh + ' (' + (v.condition || '—') + ', ' + (v.purchaseType || '—') + '), delivered ' + (v.purchaseDate || '—') + ' at ' + fmtMiles(v.mileageAtPurchase) + ' mi. Current: ' + fmtMiles(v.currentMileage) + ' mi.',
-        'Reported defect: ' + (caseData.problem.description || '—'),
-        'Safety-related: ' + (caseData.problem.safetyRelated || '—') + '. Manufacturer warranty: ' + (caseData.warranty.active || '—') + '.',
-        '',
-        'Repair history: ' + attempts + ' attempt(s) for the primary defect; ' + days + ' cumulative day(s) out of service.',
-        windowLine,
-        '',
-        'Screen result: ' + assessment.verdictLabel + ' (rules v' + assessment.audit.ruleVersion + ', demo thresholds — verify with counsel).',
-        (assessment.procedural ? 'Procedural track: ' + assessment.procedural.label + '. ' + assessment.procedural.detail : ''),
-        'Recommended next step: ' + nextStep
-      ];
+      push('INTAKE SUMMARY — ' + (contact.name || 'Prospective client'));
+      push('');
+      if (contactLine) push(contactLine);
+      push('Vehicle: ' + veh);
+      push([acquired || 'Acquisition unspecified', cap(v.condition) || null, delivered ? 'delivered ' + delivered : null, mileTail]
+        .filter(Boolean).join('  ·  '));
+      push('Reported defect: ' + (problem.description || '—'));
+      push('Safety-related: ' + (problem.safetyRelated || '—') + '  ·  Manufacturer warranty: ' + (warranty.active || '—'));
+      push('');
+      push('Repair history: ' + qty(attempts, 'attempt') + ' for the primary defect; ' + qty(days, 'day') + ' out of service');
+      push(window);
+      push('');
+      push('Screen result: ' + screen + ' (' + caveat + ')');
+      if (swing) push(swing.text);
+      if (deadline) push(deadline);
+      if (procedural) push('Procedural track: ' + procedural);
+      if (flags.length) { push(''); push('Open items:'); flags.forEach(function (f) { push('  • ' + f); }); }
+      push('');
+      push('Recommended next step: ' + nextStep);
     } else {
-      lines = [
-        'INTAKE SUMMARY — ' + (caseData.contact.name || 'Prospective client'),
-        '',
-        (caseData.contact.name || 'Client') + ' presents a ' + veh + ' (' + (v.purchaseType || '—') + ', delivered ' + (v.purchaseDate || '—') + '). Primary complaint: ' + (caseData.problem.description || '—'),
-        '',
-        'History shows ' + attempts + ' repair attempt(s) and ' + days + ' day(s) out of service. Safety classification: ' + (caseData.problem.safetyRelated || '—') + '. Warranty status: ' + (caseData.warranty.active || '—') + '.',
-        windowLine,
-        '',
-        'Preliminary screen: ' + assessment.verdictLabel + '. Demo rules v' + assessment.audit.ruleVersion + ' — thresholds require attorney validation.',
-        (assessment.procedural ? 'Procedural track: ' + assessment.procedural.label + '.' : ''),
-        'Next step: ' + nextStep
-      ];
+      push('INTAKE SUMMARY — ' + (contact.name || 'Prospective client'));
+      push('');
+      push((contact.name || 'The client') + ' presents a ' + veh +
+        (acquired ? ', ' + acquired.toLowerCase() : '') +
+        (delivered ? ', delivered ' + delivered : '') +
+        (mileTail ? ' (' + mileTail + ')' : '') + '.');
+      if (contactLine) push(contactLine);
+      push('');
+      push('Primary complaint: ' + (problem.description || '—'));
+      push('Repair record: ' + qty(attempts, 'attempt') + ' and ' + qty(days, 'day') + ' out of service. ' +
+        'Safety classification ' + (problem.safetyRelated || '—') + '; warranty ' + (warranty.active || '—') + '.');
+      push(window);
+      push('');
+      push('Preliminary screen: ' + screen + ' — ' + caveat + '.');
+      if (swing) push(swing.text);
+      if (deadline) push(deadline);
+      if (procedural) push('Track: ' + procedural);
+      if (flags.length) { push(''); push('Open items for counsel:'); flags.forEach(function (f) { push('  – ' + f); }); }
+      push('');
+      push('Next step: ' + nextStep);
     }
 
     return lines.join('\n');
   }
 
   /* Live mode — browser call for local demo use only. */
-  function buildLiveSummary(caseData, assessment, apiKey) {
+  function buildLiveSummary(caseData, assessment, apiKey, config) {
+    var swing = swingFactor(caseData, assessment, config);
+    var deadline = deadlineLine(assessment);
     var prompt =
       'You are drafting a 30-second-read intake summary for a California lemon law attorney. ' +
-      'Use ONLY the structured data below. Do not invent facts. Do not give legal advice. ' +
-      'End with the recommended next step. Note that the screening rules are demo thresholds pending attorney validation.\n\n' +
+      'Use ONLY the structured data below. Do not invent facts. Do not give legal advice or state a legal conclusion — ' +
+      'report the screening result and name what counsel must decide. ' +
+      'Note that the screening rules are demo thresholds pending attorney validation. ' +
+      'Use full month-name dates (e.g. "January 20, 2025") and comma-grouped mileage. Say "Leased" or "Purchased" plainly. ' +
+      (swing ? 'Include this swing-factor line verbatim, immediately after the screen result: "' + swing.text + '". ' : '') +
+      (deadline ? 'Include this deadline line: "' + deadline + '". ' : '') +
+      'If there are open items, list them under an "Open items:" heading, one per line, unreworded. ' +
+      'End with the recommended next step.\n\n' +
       'CASE DATA:\n' + JSON.stringify({ contact: caseData.contact, vehicle: caseData.vehicle, warranty: caseData.warranty, problem: caseData.problem, repairs: caseData.repairs }, null, 2) +
       '\n\nASSESSMENT:\n' + JSON.stringify({ verdict: assessment.verdictLabel, criteria: assessment.criteria, window: assessment.window, computed: assessment.computed, flags: assessment.flags }, null, 2);
 
@@ -122,9 +282,9 @@
       if (!opts.apiKey) {
         return Promise.reject(new Error('Live mode needs an API key. Key is held in memory only — never committed, never persisted. For a real deployment this call moves server-side.'));
       }
-      return buildLiveSummary(caseData, assessment, opts.apiKey);
+      return buildLiveSummary(caseData, assessment, opts.apiKey, opts.config);
     }
-    return Promise.resolve(buildMockSummary(caseData, assessment));
+    return Promise.resolve(buildMockSummary(caseData, assessment, opts.config));
   }
 
   /* =========================================================================
@@ -246,7 +406,10 @@
     generateSummary: generateSummary,
     generateDocumentRequest: generateDocumentRequest,
     buildMockDocumentRequest: buildMockDocumentRequest,
-    documentRequestItems: documentRequestItems
+    documentRequestItems: documentRequestItems,
+    swingFactor: swingFactor,
+    plur: plur,
+    buildMockSummary: buildMockSummary
   };
 
 })(typeof window !== 'undefined' ? window : globalThis);

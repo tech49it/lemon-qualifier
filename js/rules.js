@@ -20,7 +20,7 @@
    * starting point only — VERIFY CURRENT STATUTE WITH COUNSEL.
    * --------------------------------------------------------------------- */
   var RULES_CONFIG = {
-    version: '1.2.0-demo',
+    version: '1.2.1-demo',
     label: 'CA Song-Beverly presumption guideline (demo values)',
     verifyWithCounsel: true,
 
@@ -434,9 +434,10 @@
       var candA = addYears(warrantyEnd, ft.solYearsAfterWarrantyExpiry);
       var candB = addYears(delivery, ft.solCapYearsFromDelivery);
       var eff = candA <= candB ? candA : candB;
+      var yrs = ft.solYearsAfterWarrantyExpiry;
       var controlled = candA <= candB
-        ? ft.solYearsAfterWarrantyExpiry + ' year(s) after warranty expiry'
-        : ft.solCapYearsFromDelivery + ' year cap from delivery';
+        ? yrs + (yrs === 1 ? ' year' : ' years') + ' after warranty expiry'
+        : ft.solCapYearsFromDelivery + '-year cap from delivery';
       var rem = daysBetween(today, eff);
       out.push({
         id: 'sol',

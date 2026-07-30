@@ -78,6 +78,11 @@ Separation is strict and must stay strict: qualification logic lives only in
    nothing else. It never states or implies a qualification outcome, and the demo
    never transmits it — copy-to-clipboard only, no mail-client integration, no
    sending of any kind. It carries the same human-review gate as the summary.
+10. **The summary names what counsel must decide; it never decides it.** The
+    attorney summary reports the screening result and surfaces the swing factor
+    and open items — the questions that belong to a lawyer. It draws no legal
+    conclusion, and every summary notes the thresholds are demo values pending
+    attorney validation.
 
 ## Known simplifications, flagged for counsel review
 

@@ -75,6 +75,8 @@ Click **Generate draft** in the Attorney intake summary panel.
 
 > "Thirty-second read for the attorney: vehicle, timeline, attempts, days, presumption analysis, recommended next step. It's a draft — the rep edits it, and it doesn't count until a human marks it reviewed."
 
+Point at the **Swing factor** line and say it out loud — it's the strongest thing on screen: "That's the one unknown that flips this case — here, whether counsel classifies the defect as safety-related."
+
 Edit one word in the textarea. Click **Mark reviewed & save** — point at the Reviewed badge.
 
 > "And if anyone touches the case data after approval, the reviewed status is revoked automatically. An approval only covers the inputs it was given. That's the same human-in-the-loop gate my email agent runs in production — nothing sends, nothing counts, without a person signing off."

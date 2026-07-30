@@ -635,3 +635,74 @@ html, body {
     overflow-y: auto;
   }
 }
+
+/* ---------------------------- print ------------------------------------- */
+/* A partner may print what's on screen. No control is added — the browser's
+   own print command. Controls drop away; disclaimers and audit lines stay. */
+@media print {
+  html, body {
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 12px;
+  }
+
+  /* Drop everything interactive or navigational */
+  .toolbar,
+  #rules-panel, .rules-panel,
+  #case-chips,
+  .btn, .link-btn, .status-toggle, .docreq-toggle,
+  .mode-toggle,
+  .summary-actions {
+    display: none !important;
+  }
+
+  /* Header prints as a plain title band, not the dark UI chrome */
+  .app-header { background: #fff !important; color: #000 !important; padding: 0 0 10px; }
+  .brand-title, .brand-sub { color: #000 !important; }
+  .brand-mark { background: #000 !important; }
+  .header-banner {
+    background: #fff !important;
+    color: #000 !important;
+    border: 1px solid #999 !important;
+    max-width: none;
+  }
+  .header-banner strong { color: #000 !important; }
+
+  /* One-column flow; release the sticky/scrolling outputs column */
+  .layout { display: block !important; max-width: none; padding: 0; margin: 0; }
+  .outputs-column { position: static !important; max-height: none !important; overflow: visible !important; }
+
+  /* Keep a panel together on a page where it fits */
+  .panel {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    box-shadow: none !important;
+    border: 1px solid #999 !important;
+    margin-bottom: 12px;
+  }
+  .panel-eyebrow { color: #000 !important; }
+
+  /* Intake form reads as a document: values, not input boxes */
+  .field input, .field select, .field textarea {
+    border: none !important;
+    background: #fff !important;
+    color: #000 !important;
+    padding-left: 0 !important;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  /* Disclaimers and audit lines MUST survive to paper */
+  .disclaimer, .audit-line {
+    background: #fff !important;
+    color: #000 !important;
+    border-color: #999 !important;
+  }
+  .disclaimer strong { color: #000 !important; }
+
+  /* Preserve the shaded timeline/verdict fills when printing */
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  a[href] { color: #000 !important; text-decoration: underline; }
+  .app-footer { border-top: 1px solid #999 !important; background: #fff !important; color: #000 !important; }
+}

@@ -8,7 +8,7 @@ Built by Andre C ([github.com/tech49it](https://github.com/tech49it)) as a techn
 
 This demo applies the same design pattern I use in production systems (an AI email agent handling ~2,000 attorney emails/month, and Atrium, a multi-tenant operations platform):
 
-**1. Human-in-the-loop, everywhere it matters.** The AI-generated attorney summary lands in an editable draft field and does not count until a person clicks "Mark reviewed & save." If the underlying case data changes after review, the reviewed status is revoked automatically — an approval only covers the inputs it was given. No output anywhere in the app presents itself as a decision.
+**1. Human-in-the-loop, everywhere it matters.** The AI-generated attorney summary lands in an editable draft field and does not count until a person clicks "Mark reviewed & save." If the underlying case data changes after review, the reviewed status is revoked automatically — an approval only covers the inputs it was given. The summary names the **swing factor** — the single unknown that would change the outcome — and carries the assessment's **open items**, so the attorney reads what counsel must decide, not just a status. No output anywhere in the app presents itself as a decision.
 
 **2. The attorneys own the rules.** Every screening threshold — repair-attempt counts, days out of service, the 18-month/18,000-mile presumption window — lives in one visible config object (`js/rules.js`), editable live in the UI and tagged "verify with counsel." The values shipped here are illustrative demo numbers drawn from the Civil Code § 793.22 presumption guideline; they exist to be replaced by whatever the firm's attorneys decide. The engine enforces their judgment. It doesn't substitute for it.
 

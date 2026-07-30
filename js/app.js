@@ -453,7 +453,10 @@
     var body = $('#assessment-body');
     body.innerHTML = '';
 
-    body.appendChild(el('div', { class: 'verdict ' + a.verdict, text: a.verdictLabel }));
+    body.appendChild(el('div', {
+      class: 'verdict ' + a.verdict, text: a.verdictLabel,
+      role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true'
+    }));
 
     /* Repair timeline strip — rendering only; positions/totals come from rules.js */
     body.appendChild(buildTimelineNode());
@@ -604,7 +607,10 @@
     /* Track badge */
     var badgeClass = track.status === 'fast_track' ? 'STRONG'
       : track.status === 'traditional' ? 'PROMISING' : 'PROMISING';
-    var badge = el('div', { class: 'verdict ' + badgeClass, style: 'font-size:18px;' , text: track.label });
+    var badge = el('div', {
+      class: 'verdict ' + badgeClass, style: 'font-size:18px;', text: track.label,
+      role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true'
+    });
     body.appendChild(badge);
 
     body.appendChild(el('div', { class: 'window-line', text: track.detail }));
@@ -658,6 +664,7 @@
       var btn = el('button', {
         class: 'status-toggle ' + item.status,
         text: item.status.toUpperCase(),
+        'aria-label': item.label + ' — status: ' + item.status + '. Activate to change.',
         onclick: function () {
           item.status = STATUS_CYCLE[item.status];
           state.docRequest.reviewed = false; /* checklist changed — request draft review no longer covers it */
@@ -927,13 +934,15 @@
   function generateSummary() {
     if (state.summary.generating) return;
     var a = Rules.evaluateCase(state.caseData, state.config);
-    a.procedural = Rules.resolveTrack(state.caseData, state.config);
+    var track = Rules.resolveTrack(state.caseData, state.config);
+    a.procedural = track;
+    a.deadlines = Rules.computeDeadlines(state.caseData, track, state.config);
     state.lastAssessment = a;
     state.summary.generating = true;
     state.summary.error = null;
     renderSummaryActions();
 
-    LLM.generateSummary(state.caseData, a, { mode: state.llmMode, apiKey: state.apiKey })
+    LLM.generateSummary(state.caseData, a, { mode: state.llmMode, apiKey: state.apiKey, config: state.config })
       .then(function (text) {
         state.summary.text = text;
         state.summary.reviewed = false;
