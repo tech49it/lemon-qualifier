@@ -114,4 +114,6 @@ Firebase persistence, PDF export of the reviewed summary, and a qualified-vs-dec
 
 - All names, vehicles, dealers, and records are fictional.
 - Threshold values reference the California Civil Code § 793.22 presumption guideline as a starting point only; they are presented as demo logic requiring attorney validation, and the app says so on every output.
+- The AB 1755 / SB 26 procedural-track intervals (pre-suit notice, mediation window, and the statute-of-limitations rules) are demo values, and public sources disagreed on the pre-suit notice operative date — which is exactly why they are editable configuration rather than constants in the code.
+- The *Rodriguez v. FCA US LLC* used-vehicle screen asks a single question — whether a manufacturer warranty was issued at sale — and flags it for attorney determination. It does not attempt to decide CPO status.
 - Day-counting and repair-attempt-grouping conventions are simplifications marked for counsel review in the source.
