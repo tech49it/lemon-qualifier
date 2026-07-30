@@ -17,7 +17,7 @@ Rivera case is already on screen.
 
 **Click nothing yet.** Point at the form: "This is what your intake rep captures — vehicle, warranty, defect, and the repair history row by row. Attempts and days out of service compute automatically." Point at the computed strip: 3 attempts, 34 days.
 
-Point at the verdict: **STRONG CANDIDATE**. Walk the ledger, top to bottom:
+Point at the verdict: **STRONG CANDIDATE**. Point at the repair timeline just below it — one bar per shop visit, drawn to scale: "Three repair attempts, thirty-four days out of service — the whole history at a glance." Then walk the ledger, top to bottom:
 
 > "Safety-defect attempts — met. Days out of service — met. And it's inside the presumption window: first repair at four months, sixty-five hundred miles. Plain English on every line, so the rep understands *why*, not just *what*."
 
@@ -66,6 +66,8 @@ Click **Okafor — electrical drain**. Verdict: **PROMISING — NEEDS DOCUMENTAT
 Point at the document checklist. Toggle one item missing → requested:
 
 > "The checklist is generated per case — every repair order by date, contract, warranty booklet, manufacturer communications. Your reps chase documents with a list instead of from memory."
+
+Expand **Missing-document request**, click **Draft email**: "And it drafts the request for exactly what's missing — same human-review gate, and it never sends anything. The rep reviews, then copies it out."
 
 ## 4:15 — The summary + human gate (45 sec)
 

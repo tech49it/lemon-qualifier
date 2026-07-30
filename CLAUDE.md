@@ -73,6 +73,11 @@ Separation is strict and must stay strict: qualification logic lives only in
 8. **Deadline output is arithmetic, not opinion.** Every date carries the basis
    string naming which configured rule produced it. Never label a computed date
    as a limitations determination.
+9. **Generated client messages request documents only.** The missing-document
+   request drafts an email or text asking for the outstanding checklist items and
+   nothing else. It never states or implies a qualification outcome, and the demo
+   never transmits it — copy-to-clipboard only, no mail-client integration, no
+   sending of any kind. It carries the same human-review gate as the summary.
 
 ## Known simplifications, flagged for counsel review
 

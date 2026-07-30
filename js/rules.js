@@ -20,7 +20,7 @@
    * starting point only — VERIFY CURRENT STATUTE WITH COUNSEL.
    * --------------------------------------------------------------------- */
   var RULES_CONFIG = {
-    version: '1.1.0-demo',
+    version: '1.2.0-demo',
     label: 'CA Song-Beverly presumption guideline (demo values)',
     verifyWithCounsel: true,
 
@@ -506,6 +506,125 @@
     };
   }
 
+  /* --------------------------- repair timeline --------------------------- */
+
+  /**
+   * buildTimeline(caseData, config, todayOverride) -> timeline data
+   * Pure derivation for the repair-timeline strip. No DOM. Does NOT recompute
+   * attempts/days — it reads computeDerived() for the totals line and only
+   * derives bar/marker POSITIONS from the raw visit dates. Fractions are along
+   * an axis from delivery (or earliest visit) to the later of today or the last
+   * visit-out date. Rendering (app.js) turns fractions into CSS percentages.
+   *
+   * todayOverride is accepted for deterministic testing; defaults to new Date().
+   */
+  function buildTimeline(caseData, config, todayOverride) {
+    var cfg = config || RULES_CONFIG;
+    var rows = (caseData && caseData.repairs) || [];
+    var derived = computeDerived(caseData); // totals only — not recomputed here
+
+    var delivery = parseDate(caseData && caseData.vehicle && caseData.vehicle.purchaseDate);
+    var today = todayOverride
+      ? (todayOverride instanceof Date ? todayOverride : parseDate(todayOverride))
+      : new Date();
+
+    var visits = rows.map(function (r, i) {
+      var din = parseDate(r.dateIn);
+      var dout = parseDate(r.dateOut);
+      return {
+        index: i,
+        din: din, dout: dout,
+        dateIn: r.dateIn || '', dateOut: r.dateOut || '',
+        shop: r.shop || '', reported: r.reported || '',
+        samePrimaryDefect: r.samePrimaryDefect !== false,
+        days: visitDays(r),          // null when a date is missing
+        complete: !!(din && dout)
+      };
+    });
+
+    /* Axis start: delivery if known, else earliest visit dateIn */
+    var startCands = [];
+    if (delivery) startCands.push(delivery.getTime());
+    visits.forEach(function (v) { if (v.din) startCands.push(v.din.getTime()); });
+    var axisStartMs = startCands.length ? Math.min.apply(null, startCands) : null;
+
+    /* Axis end: later of today or the last visit-out (also consider dateIn for markers) */
+    var endCands = [];
+    if (today) endCands.push(today.getTime());
+    visits.forEach(function (v) {
+      if (v.dout) endCands.push(v.dout.getTime());
+      if (v.din) endCands.push(v.din.getTime());
+    });
+    var axisEndMs = endCands.length ? Math.max.apply(null, endCands) : null;
+
+    var hasAxis = axisStartMs !== null && axisEndMs !== null && axisEndMs > axisStartMs;
+    var span = hasAxis ? (axisEndMs - axisStartMs) : 0;
+
+    function frac(ms) {
+      if (!hasAxis || ms === null || ms === undefined) return 0;
+      var f = (ms - axisStartMs) / span;
+      return f < 0 ? 0 : (f > 1 ? 1 : f);
+    }
+
+    var segments = visits.map(function (v) {
+      if (v.complete) {
+        var startF = frac(v.din.getTime());
+        var endF = frac(v.dout.getTime());
+        var widthF = endF - startF;
+        if (widthF < 0) widthF = 0;
+        return {
+          kind: 'bar', index: v.index,
+          startFrac: startF, widthFrac: widthF,
+          dateIn: v.dateIn, dateOut: v.dateOut, days: v.days,
+          shop: v.shop, reported: v.reported,
+          samePrimaryDefect: v.samePrimaryDefect, incomplete: false
+        };
+      }
+      var anchor = v.din || v.dout || null;
+      return {
+        kind: 'marker', index: v.index,
+        startFrac: anchor ? frac(anchor.getTime()) : 0, widthFrac: 0,
+        dateIn: v.dateIn, dateOut: v.dateOut, days: null,
+        shop: v.shop, reported: v.reported,
+        samePrimaryDefect: v.samePrimaryDefect, incomplete: true,
+        anchored: !!anchor
+      };
+    });
+
+    /* Presumption window boundary = delivery + presumptionWindow.months */
+    var presumption = null;
+    if (delivery && cfg.presumptionWindow && cfg.presumptionWindow.months != null) {
+      var boundary = new Date(delivery.getTime());
+      boundary.setMonth(boundary.getMonth() + cfg.presumptionWindow.months);
+      var bMs = boundary.getTime();
+      presumption = {
+        boundaryISO: fmtDate(boundary),
+        months: cfg.presumptionWindow.months,
+        frac: frac(bMs),
+        closed: today ? bMs < today.getTime() : false,
+        inRange: hasAxis && bMs >= axisStartMs && bMs <= axisEndMs
+      };
+    }
+
+    return {
+      hasVisits: visits.length > 0,
+      hasAxis: hasAxis,
+      deliveryISO: delivery ? fmtDate(delivery) : null,
+      axis: {
+        startISO: axisStartMs !== null ? fmtDate(new Date(axisStartMs)) : null,
+        endISO: axisEndMs !== null ? fmtDate(new Date(axisEndMs)) : null,
+        spanDays: hasAxis ? Math.round(span / 86400000) : 0
+      },
+      segments: segments,
+      presumption: presumption,
+      totals: {
+        attempts: derived.attempts,
+        daysOut: derived.daysOut,
+        daysUnknown: derived.daysUnknown
+      }
+    };
+  }
+
   global.LemonRules = {
     RULES_CONFIG: RULES_CONFIG,
     evaluateCase: evaluateCase,
@@ -513,7 +632,8 @@
     inputsHash: inputsHash,
     resolveTrack: resolveTrack,
     computeDeadlines: computeDeadlines,
-    screenUsedVehicle: screenUsedVehicle
+    screenUsedVehicle: screenUsedVehicle,
+    buildTimeline: buildTimeline
   };
 
 })(typeof window !== 'undefined' ? window : globalThis);
