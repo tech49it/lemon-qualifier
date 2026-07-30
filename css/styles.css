@@ -29,8 +29,8 @@
   --fail: #c1281c;    --fail-bg: #fbeeec;    --fail-line: #f1cdc8;
   --neutral-bg: #f5f5f7;
 
-  --accent: #0071e3;        /* single restrained accent (focus, links) */
-  --focus: #0071e3;
+  --accent: #0072ba;        /* Italian azzurro — accent (focus, links) */
+  --focus: #0072ba;
 
   --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', 'Segoe UI', system-ui, Helvetica, Arial, sans-serif;
   --font-ui: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', system-ui, Helvetica, Arial, sans-serif;
@@ -303,7 +303,7 @@ html, body {
 .field textarea:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.16);
+  box-shadow: 0 0 0 3px rgba(0, 114, 186, 0.18);
 }
 .field textarea { resize: vertical; min-height: 72px; }
 
@@ -481,7 +481,7 @@ html, body {
 .summary-text:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.16);
+  box-shadow: 0 0 0 3px rgba(0, 114, 186, 0.18);
 }
 .summary-actions {
   display: flex;
@@ -511,7 +511,7 @@ html, body {
   background: var(--panel);
   color: var(--ink);
 }
-.api-key-row input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.16); }
+.api-key-row input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0, 114, 186, 0.18); }
 .llm-error { font-size: 13px; color: var(--fail); margin-top: 10px; }
 
 /* ---------------------------- rules panel ------------------------------- */
@@ -535,7 +535,7 @@ html, body {
   background: var(--panel);
   color: var(--ink);
 }
-.rules-grid input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.16); }
+.rules-grid input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0, 114, 186, 0.18); }
 .verify-tag {
   display: inline-block;
   font-family: var(--font-mono);
