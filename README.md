@@ -94,11 +94,17 @@ The demo loads with three sample cases — strong candidate, borderline, likely 
 
 ## Screenshots
 
-*(placeholders — add after first run)*
+**Qualification assessment** — the verdict, the repair timeline, and the criteria ledger with a plain-English reason on every line.
 
-- `docs/screenshot-assessment.png` — qualification assessment, strong candidate
-- `docs/screenshot-rules.png` — the editable rules panel
-- `docs/screenshot-summary.png` — reviewed intake summary
+![Qualification assessment — strong candidate](docs/screenshot-assessment.png)
+
+**The rules belong to the attorneys** — every threshold is editable and tagged "verify with counsel," and the manufacturer opt-in registry ships empty by design.
+
+![Editable screening rules](docs/screenshot-rules.png)
+
+**Attorney intake summary** — a 30-second read that names the swing factor and open items, held behind a human-review gate: the draft does not count until a person marks it reviewed.
+
+![Reviewed attorney intake summary](docs/screenshot-summary.png)
 
 ## What v2 would add
 

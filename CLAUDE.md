@@ -42,7 +42,6 @@ js/llm.js             summary generator: mock (default) + live OpenAI adapter
 js/app.js             UI state and rendering only — zero business logic
 firebase.json         Firebase Hosting config (public dir = root, noindex)
 DEPLOY.md             deploy commands for GitHub Pages / Firebase / Vercel
-DEMO_SCRIPT.md        5-minute presentation script
 ```
 
 Separation is strict and must stay strict: qualification logic lives only in
