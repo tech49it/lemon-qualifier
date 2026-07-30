@@ -20,6 +20,8 @@
     config: JSON.parse(JSON.stringify(Rules.RULES_CONFIG)),
     checklist: [],           // [{id, label, status}]
     summary: { text: '', reviewed: false, reviewedAt: null, generating: false, error: null },
+    docRequest: { text: '', reviewed: false, reviewedAt: null, generating: false, error: null, format: null },
+    docReqOpen: false,       // missing-docs request section collapsed by default
     llmMode: 'mock',         // 'mock' | 'live'
     apiKey: '',              // memory only — never persisted
     rulesOpen: false
@@ -54,6 +56,7 @@
     state.activeCaseId = caseId;
     state.caseData = JSON.parse(JSON.stringify(src));
     state.summary = { text: '', reviewed: false, reviewedAt: null, generating: false, error: null };
+    state.docRequest = { text: '', reviewed: false, reviewedAt: null, generating: false, error: null, format: null };
     buildChecklist();
     renderAll();
   }
@@ -149,11 +152,13 @@
   }
 
   function onCaseEdited(rebuildChecklist) {
-    state.summary.reviewed = false; /* inputs changed — any prior review no longer covers them */
-    if (rebuildChecklist) { buildChecklist(); renderChecklistPanel(); }
+    state.summary.reviewed = false;    /* inputs changed — any prior review no longer covers them */
+    state.docRequest.reviewed = false; /* the request draft was reviewed against the old inputs */
+    if (rebuildChecklist) { buildChecklist(); }
     renderComputedStrip();
     renderAssessment();
     renderTrackPanel();
+    renderChecklistPanel();            /* reflect the revoked doc-request review + any rebuilt items */
     renderSummaryPanel();
   }
 
@@ -450,6 +455,9 @@
 
     body.appendChild(el('div', { class: 'verdict ' + a.verdict, text: a.verdictLabel }));
 
+    /* Repair timeline strip — rendering only; positions/totals come from rules.js */
+    body.appendChild(buildTimelineNode());
+
     /* Presumption window line */
     var wl = el('div', { class: 'window-line' });
     var stateWord = a.window.state === 'met' ? 'Inside' : a.window.state === 'missed' ? 'Outside' : 'Unconfirmed';
@@ -492,6 +500,89 @@
     }));
   }
 
+
+  /* ------ repair timeline (rendering only) ------ */
+
+  function pct(f) { return (f * 100) + '%'; }
+
+  function segTitle(s) {
+    var head;
+    if (s.kind === 'bar') {
+      head = (s.dateIn || '?') + ' → ' + (s.dateOut || '?') +
+        ' (' + s.days + ' day' + (s.days === 1 ? '' : 's') + ')';
+    } else {
+      head = 'Incomplete dates — excluded from the days-out total. ' +
+        (s.dateIn ? 'In ' + s.dateIn : (s.dateOut ? 'Out ' + s.dateOut : 'No dates recorded'));
+    }
+    var extra = [];
+    if (s.shop) extra.push(s.shop);
+    if (s.reported) extra.push(s.reported);
+    if (!s.samePrimaryDefect) extra.push('not counted as the primary defect');
+    return head + (extra.length ? ' — ' + extra.join(' — ') : '');
+  }
+
+  function buildTimelineNode() {
+    var t = Rules.buildTimeline(state.caseData, state.config);
+    var wrap = el('div', { class: 'timeline-block' });
+    wrap.appendChild(el('div', { class: 'timeline-caption', text: 'Repair timeline' }));
+
+    if (!t.hasVisits || !t.hasAxis) {
+      wrap.appendChild(el('div', { class: 'timeline-empty', text: 'No repair visits recorded.' }));
+      return wrap;
+    }
+
+    var track = el('div', { class: 'timeline-track' });
+
+    /* Presumption window: de-emphasize the closed region, then draw the rule */
+    if (t.presumption && t.presumption.inRange) {
+      if (t.presumption.closed) {
+        var past = el('div', { class: 'timeline-past' });
+        past.style.left = pct(t.presumption.frac);
+        past.style.right = '0';
+        track.appendChild(past);
+      }
+      var rule = el('div', {
+        class: 'timeline-rule',
+        title: 'Presumption window closes ' + t.presumption.boundaryISO +
+          ' (delivery + ' + t.presumption.months + ' months)'
+      });
+      rule.style.left = pct(t.presumption.frac);
+      track.appendChild(rule);
+      var lbl = el('div', { class: 'timeline-rule-label', text: 'Presumption window' });
+      lbl.style.left = pct(t.presumption.frac);
+      track.appendChild(lbl);
+    }
+
+    t.segments.forEach(function (s) {
+      if (s.kind === 'bar') {
+        var bar = el('div', { class: 'timeline-bar', title: segTitle(s) });
+        bar.style.left = pct(s.startFrac);
+        bar.style.width = pct(s.widthFrac);
+        track.appendChild(bar);
+      } else {
+        var mk = el('div', { class: 'timeline-marker', title: segTitle(s) });
+        mk.style.left = pct(s.startFrac);
+        track.appendChild(mk);
+      }
+    });
+
+    wrap.appendChild(track);
+
+    wrap.appendChild(el('div', { class: 'timeline-axis' }, [
+      el('span', { text: t.deliveryISO || t.axis.startISO || '' }),
+      el('span', { text: t.axis.endISO || '' })
+    ]));
+
+    /* Plain-text total, duplicated on purpose — the partner is reading this panel */
+    var days = t.totals.daysOut + (t.totals.daysUnknown ? '+' : '');
+    wrap.appendChild(el('div', {
+      class: 'timeline-totals',
+      text: t.totals.attempts + ' repair attempt(s) for the primary defect · ' +
+        days + ' cumulative day(s) out of service'
+    }));
+
+    return wrap;
+  }
 
   /* ------ procedural track panel ------ */
 
@@ -569,6 +660,7 @@
         text: item.status.toUpperCase(),
         onclick: function () {
           item.status = STATUS_CYCLE[item.status];
+          state.docRequest.reviewed = false; /* checklist changed — request draft review no longer covers it */
           renderChecklistPanel();
         }
       });
@@ -622,6 +714,139 @@
       el('strong', { text: 'Demo \u2014 preliminary screening only. ' }),
       document.createTextNode('Attorney review required. Rules are illustrative; verify current statute. External links are provided for verification only.')
     ]));
+
+    /* ---- Missing-document request (collapsible) ---- */
+    renderDocRequestSection(body);
+  }
+
+  /* ------ missing-document request ------ */
+
+  function renderDocRequestSection(parent) {
+    var items = LLM.documentRequestItems(state.checklist);
+    var section = el('div', { class: 'docreq-section' });
+
+    section.appendChild(el('button', {
+      class: 'docreq-toggle',
+      text: (state.docReqOpen ? '\u25be ' : '\u25b8 ') + 'Missing-document request',
+      onclick: function () { state.docReqOpen = !state.docReqOpen; renderChecklistPanel(); }
+    }));
+
+    var wrap = el('div', { class: 'docreq-body' + (state.docReqOpen ? '' : ' hidden') });
+
+    if (!items.length) {
+      wrap.appendChild(el('p', { class: 'criterion-detail', style: 'margin:0 0 8px;', text: 'All documents collected \u2014 nothing to request.' }));
+      var row = el('div', { class: 'summary-actions' });
+      var b1 = el('button', { class: 'btn small', text: 'Draft email' });
+      var b2 = el('button', { class: 'btn secondary small', text: 'Draft text message' });
+      b1.disabled = true; b2.disabled = true;
+      row.appendChild(b1); row.appendChild(b2);
+      wrap.appendChild(row);
+      section.appendChild(wrap);
+      parent.appendChild(section);
+      return;
+    }
+
+    wrap.appendChild(el('p', {
+      class: 'criterion-detail', style: 'margin:0 0 8px;',
+      text: 'Requesting ' + items.length + ' item(s): ' + items.map(function (i) { return i.label; }).join('; ')
+    }));
+
+    var ta = el('textarea', {
+      class: 'summary-text',
+      oninput: function (e) {
+        state.docRequest.text = e.target.value;
+        state.docRequest.reviewed = false;
+        renderDocRequestActions();
+      }
+    });
+    ta.value = state.docRequest.text;
+    ta.placeholder = 'Draft an email or text, then edit here. Nothing is sent \u2014 this is a draft for staff review.';
+    wrap.appendChild(ta);
+
+    wrap.appendChild(el('div', { class: 'summary-actions', id: 'docreq-actions' }));
+
+    if (state.docRequest.error) {
+      wrap.appendChild(el('div', { class: 'llm-error', text: state.docRequest.error }));
+    }
+
+    wrap.appendChild(el('div', { class: 'disclaimer' }, [
+      el('strong', { text: 'Demo \u2014 preliminary screening only. ' }),
+      document.createTextNode('Attorney review required. Rules are illustrative; verify current statute. This message is a draft for staff review and is not sent by this demo \u2014 nothing is transmitted.')
+    ]));
+
+    section.appendChild(wrap);
+    parent.appendChild(section);
+    renderDocRequestActions();
+  }
+
+  function renderDocRequestActions() {
+    var wrap = $('#docreq-actions');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    var gen = state.docRequest.generating;
+
+    wrap.appendChild(el('button', {
+      class: 'btn small',
+      text: gen && state.docRequest.format === 'email' ? 'Drafting\u2026' : 'Draft email',
+      onclick: function () { generateDocRequest('email'); }
+    }));
+    wrap.appendChild(el('button', {
+      class: 'btn secondary small',
+      text: gen && state.docRequest.format === 'text' ? 'Drafting\u2026' : 'Draft text message',
+      onclick: function () { generateDocRequest('text'); }
+    }));
+
+    if (state.docRequest.text && !state.docRequest.reviewed) {
+      wrap.appendChild(el('button', {
+        class: 'btn secondary small',
+        text: 'Mark reviewed & save',
+        onclick: function () {
+          state.docRequest.reviewed = true;
+          state.docRequest.reviewedAt = nowStamp();
+          renderDocRequestActions();
+        }
+      }));
+      wrap.appendChild(el('span', { class: 'review-note', text: 'Draft \u2014 not yet reviewed by a human.' }));
+    }
+
+    if (state.docRequest.reviewed) {
+      wrap.appendChild(el('span', { class: 'review-badge', text: '\u2713 Reviewed ' + state.docRequest.reviewedAt }));
+    }
+
+    if (state.docRequest.text) {
+      wrap.appendChild(el('button', {
+        class: 'btn secondary small',
+        text: 'Copy',
+        onclick: function (e) {
+          try {
+            navigator.clipboard.writeText(state.docRequest.text);
+            e.target.textContent = 'Copied';
+            setTimeout(function () { e.target.textContent = 'Copy'; }, 1400);
+          } catch (err) { /* clipboard unavailable \u2014 text is visible above; nothing is transmitted */ }
+        }
+      }));
+    }
+  }
+
+  function generateDocRequest(format) {
+    if (state.docRequest.generating) return;
+    state.docRequest.generating = true;
+    state.docRequest.format = format;
+    state.docRequest.error = null;
+    renderDocRequestActions();
+
+    LLM.generateDocumentRequest(state.checklist, state.caseData, { mode: state.llmMode, apiKey: state.apiKey, format: format })
+      .then(function (text) {
+        state.docRequest.text = text;
+        state.docRequest.reviewed = false;
+        state.docRequest.generating = false;
+        renderChecklistPanel();
+      })
+      .catch(function (err) {
+        state.docRequest.generating = false;
+        state.docRequest.error = err.message;
+        renderChecklistPanel();
+      });
   }
 
   function renderSummaryPanel() {

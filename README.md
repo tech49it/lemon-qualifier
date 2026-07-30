@@ -48,6 +48,26 @@ the case for attorney determination.
 of Automotive Repair, with one-click VIN copy. Plain links, no API calls, no
 legal claims.
 
+## What's new in v1.2
+
+**Repair timeline strip.** The qualification panel now draws the repair history
+as a horizontal chronology: one shaded bar per completed visit, positioned and
+sized by date along an axis running from delivery to today, with the presumption
+window marked by a vertical rule. Visits with incomplete dates show as dashed
+markers and are called out as excluded from the days-out total. It is pure
+rendering of the case data already on screen — the attempt and days-out numbers
+below the strip come straight from the same `computeDerived()` the engine uses,
+not a second calculation.
+
+**Missing-document request drafts.** A collapsible section in the document
+checklist generates a client-ready email or text asking for exactly the items
+marked missing or requested — nothing else. It never states or implies whether
+the case qualifies, and it carries the same human-review gate as the attorney
+summary: the draft is a draft until a person marks it reviewed, and any change
+to the checklist or case data revokes that review. **It drafts only — the demo
+never transmits anything.** Copy-to-clipboard is the only way text leaves the
+panel; there is no mail-client integration and no sending of any kind.
+
 ## Architecture
 
 ```

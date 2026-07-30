@@ -1,9 +1,11 @@
 /* Plain Node test — no framework. Run: node test/rules.test.js */
 require('../js/rules.js');
 require('../js/sampleCases.js');
+require('../js/llm.js');
 
 var R = globalThis.LemonRules;
 var S = globalThis.LemonSamples;
+var L = globalThis.LemonLLM;
 var failures = 0;
 
 function check(name, cond) {
@@ -108,8 +110,88 @@ unsureUsed.warranty.warrantyIssuedAtSale = 'unsure';
 check('used + unsure -> warning flag',
   R.screenUsedVehicle(unsureUsed, R.RULES_CONFIG).severity === 'warning');
 
-/* v1.0 behaviour unchanged */
-check('rules version bumped to 1.1', R.RULES_CONFIG.version === '1.1.0-demo');
+/* ===================== v1.2 — repair timeline ===================== */
+
+function timelineCase(repairs) {
+  var c = JSON.parse(JSON.stringify(byId['case-strong']));
+  c.repairs = repairs;
+  return c;
+}
+
+check('timeline: zero visits does not throw', (function () {
+  try {
+    var t = R.buildTimeline(timelineCase([]), R.RULES_CONFIG);
+    return t.hasVisits === false && t.segments.length === 0 && t.totals.attempts === 0;
+  } catch (e) { return false; }
+})());
+
+check('timeline: one same-day visit renders as a bar', (function () {
+  try {
+    var t = R.buildTimeline(timelineCase([
+      { dateIn: '2025-05-01', dateOut: '2025-05-01', samePrimaryDefect: true }
+    ]), R.RULES_CONFIG);
+    return t.segments.length === 1 && t.segments[0].kind === 'bar' && t.segments[0].days === 1;
+  } catch (e) { return false; }
+})());
+
+check('timeline: visit missing dateOut renders as marker', (function () {
+  try {
+    var t = R.buildTimeline(timelineCase([
+      { dateIn: '2025-05-01', dateOut: '', samePrimaryDefect: true }
+    ]), R.RULES_CONFIG);
+    return t.segments[0].kind === 'marker' && t.segments[0].incomplete === true;
+  } catch (e) { return false; }
+})());
+
+check('timeline: out-of-order visits do not throw', (function () {
+  try {
+    var t = R.buildTimeline(timelineCase([
+      { dateIn: '2025-11-01', dateOut: '2025-11-05', samePrimaryDefect: true },
+      { dateIn: '2025-05-01', dateOut: '2025-05-03', samePrimaryDefect: true }
+    ]), R.RULES_CONFIG);
+    return t.segments.length === 2;
+  } catch (e) { return false; }
+})());
+
+/* Timeline reports computeDerived's totals — it does not recompute them */
+check('timeline totals match computeDerived', (function () {
+  var c = byId['case-strong'];
+  var d = R.computeDerived(c);
+  var t = R.buildTimeline(c, R.RULES_CONFIG);
+  return t.totals.attempts === d.attempts && t.totals.daysOut === d.daysOut;
+})());
+
+
+/* ===================== v1.2 — missing-document request ===================== */
+
+var allCollected = [
+  { id: 'a', label: 'Purchase contract', status: 'collected' },
+  { id: 'b', label: 'Warranty booklet', status: 'collected' }
+];
+check('doc request: empty/disabled when all collected',
+  L.documentRequestItems(allCollected).length === 0 &&
+  L.buildMockDocumentRequest(allCollected, byId['case-strong'], 'email') === '');
+
+var mixedList = [
+  { id: 'a', label: 'Repair order — visit 1 (2025-09-02)', status: 'missing' },
+  { id: 'b', label: 'Purchase contract', status: 'collected' },
+  { id: 'c', label: 'Warranty booklet / coverage statement', status: 'requested' }
+];
+var emailDraft = L.buildMockDocumentRequest(mixedList, byId['case-strong'], 'email');
+check('doc request: contains every missing/requested label',
+  emailDraft.indexOf('Repair order — visit 1 (2025-09-02)') !== -1 &&
+  emailDraft.indexOf('Warranty booklet / coverage statement') !== -1);
+check('doc request: omits the collected label',
+  emailDraft.indexOf('Purchase contract') === -1);
+check('doc request: states no qualification outcome',
+  !/qualif|strong candidate|not qualified|promising|legal advice/i.test(emailDraft));
+var textDraft = L.buildMockDocumentRequest(mixedList, byId['case-strong'], 'text');
+check('doc request: text draft is non-empty and under 320 chars',
+  textDraft.length > 0 && textDraft.length <= 320);
+
+
+/* v1.0 behaviour unchanged; version bumped */
+check('rules version bumped to 1.2', R.RULES_CONFIG.version === '1.2.0-demo');
 
 
 console.log(failures === 0 ? '\nAll checks passed.' : '\n' + failures + ' failure(s).');

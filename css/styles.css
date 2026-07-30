@@ -519,6 +519,110 @@ html, body {
   background: var(--panel);
 }
 
+/* ---------------------------- repair timeline --------------------------- */
+
+.timeline-block { margin: 0 0 14px; }
+.timeline-caption {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 6px;
+}
+.timeline-track {
+  position: relative;
+  height: 34px;
+  background: var(--neutral-bg);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.timeline-bar {
+  position: absolute;
+  top: 8px;
+  height: 18px;
+  min-width: 4px;              /* a same-day visit stays visible */
+  background: var(--caution);
+  border: 1px solid var(--caution);
+  border-radius: 3px;
+  opacity: 0.85;
+}
+.timeline-marker {             /* a visit with incomplete dates */
+  position: absolute;
+  top: 5px;
+  height: 24px;
+  width: 0;
+  border-left: 2px dashed var(--caution);
+}
+.timeline-rule {               /* presumption-window boundary */
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 0;
+  border-left: 2px solid var(--rule-strong);
+}
+.timeline-rule-label {
+  position: absolute;
+  top: 1px;
+  transform: translateX(4px);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--ink-faint);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.timeline-past {               /* region past a closed window — de-emphasized */
+  position: absolute;
+  top: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    45deg, transparent, transparent 5px, var(--rule) 5px, var(--rule) 10px);
+  opacity: 0.7;
+}
+.timeline-axis {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--ink-faint);
+  margin-top: 4px;
+}
+.timeline-totals {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  margin-top: 6px;
+  padding-bottom: 11px;
+  border-bottom: 1px solid var(--rule);
+}
+.timeline-empty {
+  font-size: 12.5px;
+  color: var(--ink-faint);
+  padding: 12px;
+  background: var(--neutral-bg);
+  border-radius: var(--radius);
+  margin-bottom: 11px;
+}
+
+/* ---------------------------- doc request ------------------------------- */
+
+.docreq-section {
+  margin-top: 14px;
+  border-top: 1px dashed var(--rule-strong);
+  padding-top: 10px;
+}
+.docreq-toggle {
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--ink-soft);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+}
+.docreq-body { margin-top: 8px; }
+.docreq-body .summary-text { min-height: 160px; }
+
 .hidden { display: none !important; }
 
 /* Keep outputs visible while the (much taller) intake form scrolls */
