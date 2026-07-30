@@ -45,6 +45,7 @@ html, body {
   font-family: var(--font-ui);
   font-size: 15px;
   line-height: 1.5;
+  overflow-x: hidden;      /* belt-and-suspenders: never scroll the page sideways */
 }
 
 :focus-visible {
@@ -188,6 +189,11 @@ html, body {
   max-width: 1440px;
   margin: 0 auto;
 }
+
+/* Grid/flex children must be allowed to shrink below their content's intrinsic
+   width, or one wide control (iOS date/number inputs) stretches the whole
+   column and clips every panel. */
+.layout > *, .outputs-column, .panel { min-width: 0; }
 
 @media (max-width: 980px) {
   .layout { grid-template-columns: 1fr; padding: 16px 14px 60px; }
@@ -705,4 +711,18 @@ html, body {
 
   a[href] { color: #000 !important; text-decoration: underline; }
   .app-footer { border-top: 1px solid #999 !important; background: #fff !important; color: #000 !important; }
+}
+
+/* ---------------------------- phone widths ------------------------------ */
+/* Placed last so these overrides win by source order. Stack form fields one
+   per row so two controls never sit side by side — iOS Safari won't shrink
+   date/number inputs below their intrinsic width, which otherwise forces the
+   whole column (and every panel) wider than the screen and clips content. */
+@media (max-width: 560px) {
+  .field-grid { grid-template-columns: 1fr; }
+  .field input, .field select, .field textarea { max-width: 100%; min-width: 0; }
+  .check-item { flex-wrap: wrap; }
+  .check-item > span { min-width: 0; overflow-wrap: anywhere; }
+  .status-toggle { min-width: 84px; }
+  .rules-grid { grid-template-columns: 1fr 88px; }
 }
