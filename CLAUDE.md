@@ -9,20 +9,15 @@ information belongs in here.
 A working demo of an intake-qualification workflow for a California lemon law
 practice. An intake rep captures vehicle, warranty, defect, and repair history;
 the app screens the case against configurable Song-Beverly presumption
-guidelines and produces three outputs: qualification assessment, document
-checklist, and an attorney-ready intake summary.
+guidelines and produces four outputs: qualification assessment, procedural
+track & deadlines, document checklist, and an attorney-ready intake summary.
 
 It is a portfolio and demonstration piece. All data is fictional. All screening
 thresholds are demo values pending attorney validation.
 
 ## Status
 
-v1 is complete and verified. Logic tested headless (jsdom + Node); all three
-sample cases produce their intended verdicts; rules edits recompute live; the
-human-review gate revokes approval when inputs change after review.
-
-Not yet done: browser verification by a human, README screenshots, git push,
-deployment.
+Deployed and live at https://tech49it.github.io/lemon-qualifier/ — version `1.2.1-demo`, test suite passing (`node test/rules.test.js`, 49/49).
 
 ## Stack
 
@@ -98,32 +93,6 @@ Separation is strict and must stay strict: qualification logic lives only in
 
 These are noted in source comments. Keep them visible rather than quietly
 "fixing" them into false precision.
-
-## Task queue
-
-**Priority 1 — get it live (do these first, in order)**
-1. Open `index.html` in a browser. Verify layout at laptop and phone widths,
-   keyboard focus visibility, and that all three sample cases render.
-2. Capture three screenshots into `docs/`:
-   `screenshot-assessment.png`, `screenshot-rules.png`, `screenshot-summary.png`.
-   Update the README screenshot section to reference them.
-3. `git init`, commit, push to `github.com/tech49it/lemon-qualifier` (public).
-4. Enable GitHub Pages: Settings → Pages → branch `main`, folder `/ (root)`.
-5. Add the live URL to the README and the repo description.
-
-**Priority 2 — polish**
-6. Real-browser CSS pass: check the criteria ledger, the rules grid, and the
-   summary actions row at 380px, 768px, and 1440px.
-7. `test/rules.test.js` exists and passes (`node test/rules.test.js`, exit 1 on
-   failure, no framework). Extend it when rules logic changes.
-
-**Priority 3 — v2, only after v1 is live**
-8. Firebase persistence (save/load cases). New Firebase project only.
-9. PDF export of the reviewed summary.
-10. Qualified-vs-declined dashboard (intake KPIs).
-
-The rules engine is already isolated, so persistence and reporting bolt on
-without touching qualification logic. Keep it that way.
 
 ## Do not
 
