@@ -1,0 +1,7 @@
+node_modules/
+.firebase/
+.firebaserc
+.vercel/
+.DS_Store
+*.log
+HANDOFF_PRIVATE.md

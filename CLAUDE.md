@@ -1,0 +1,115 @@
+# CLAUDE.md — Lemon Law Intake Qualifier
+
+Project context for Claude Code. This file is committed and may be public — it
+contains project and technical detail only. No personal, salary, or firm-specific
+information belongs in here.
+
+## What this is
+
+A working demo of an intake-qualification workflow for a California lemon law
+practice. An intake rep captures vehicle, warranty, defect, and repair history;
+the app screens the case against configurable Song-Beverly presumption
+guidelines and produces three outputs: qualification assessment, document
+checklist, and an attorney-ready intake summary.
+
+It is a portfolio and demonstration piece. All data is fictional. All screening
+thresholds are demo values pending attorney validation.
+
+## Status
+
+v1 is complete and verified. Logic tested headless (jsdom + Node); all three
+sample cases produce their intended verdicts; rules edits recompute live; the
+human-review gate revokes approval when inputs change after review.
+
+Not yet done: browser verification by a human, README screenshots, git push,
+deployment.
+
+## Stack
+
+Vanilla JavaScript (ES5-compatible), HTML5, CSS3. No framework, no build step,
+no runtime dependencies, no backend, no database. Google Fonts with system
+fallbacks. Optional OpenAI API call, off by default.
+
+## Architecture
+
+```
+index.html            shell: header, toolbar, four panels
+css/styles.css        design system, no framework
+js/rules.js           RULES_CONFIG + evaluateCase() — pure function, no DOM,
+                      no network; runs identically in Node for testing
+js/sampleCases.js     three fictional cases + blank template
+js/llm.js             summary generator: mock (default) + live OpenAI adapter
+js/app.js             UI state and rendering only — zero business logic
+firebase.json         Firebase Hosting config (public dir = root, noindex)
+DEPLOY.md             deploy commands for GitHub Pages / Firebase / Vercel
+DEMO_SCRIPT.md        5-minute presentation script
+```
+
+Separation is strict and must stay strict: qualification logic lives only in
+`rules.js`, and `app.js` never makes a screening decision.
+
+## Design invariants — do not break these
+
+1. **Human-in-the-loop.** The AI summary is a draft until a person clicks
+   "Mark reviewed & save." Editing any case input after review revokes the
+   reviewed state automatically: an approval only covers the inputs it was
+   given. No output anywhere presents itself as a decision or as legal advice.
+2. **The attorneys own the rules.** Every threshold lives in `RULES_CONFIG`,
+   is editable in the UI, and is tagged "verify with counsel." Never hardcode
+   a threshold into logic. Never present a threshold as verified statute.
+3. **Audit trail.** Every assessment carries timestamp, rule version, and an
+   input hash. Editing a rule bumps the version.
+4. **Disclaimer on every output panel:** "Demo — preliminary screening only.
+   Attorney review required. Rules are illustrative; verify current statute."
+5. **Fictional data only.** Never add real names, real dealers, real VINs, or
+   anything resembling real client information.
+6. **Runs offline.** Mock LLM is the default. The demo must work with no
+   network. No API key is ever committed or persisted.
+
+## Known simplifications, flagged for counsel review
+
+- Day counting: (date out − date in), same-day visit counts as 1.
+- Repair-attempt grouping relies on a per-visit "same primary defect" checkbox
+  rather than semantic matching of the reported complaint.
+- Used-vehicle and lease coverage is simplified; the warranty answer drives a
+  hard gate rather than nuanced analysis.
+- The presumption window check uses the first repair visit only.
+
+These are noted in source comments. Keep them visible rather than quietly
+"fixing" them into false precision.
+
+## Task queue
+
+**Priority 1 — get it live (do these first, in order)**
+1. Open `index.html` in a browser. Verify layout at laptop and phone widths,
+   keyboard focus visibility, and that all three sample cases render.
+2. Capture three screenshots into `docs/`:
+   `screenshot-assessment.png`, `screenshot-rules.png`, `screenshot-summary.png`.
+   Update the README screenshot section to reference them.
+3. `git init`, commit, push to `github.com/tech49it/lemon-qualifier` (public).
+4. Enable GitHub Pages: Settings → Pages → branch `main`, folder `/ (root)`.
+5. Add the live URL to the README and the repo description.
+
+**Priority 2 — polish**
+6. Real-browser CSS pass: check the criteria ledger, the rules grid, and the
+   summary actions row at 380px, 768px, and 1440px.
+7. `test/rules.test.js` exists and passes (`node test/rules.test.js`, exit 1 on
+   failure, no framework). Extend it when rules logic changes.
+
+**Priority 3 — v2, only after v1 is live**
+8. Firebase persistence (save/load cases). New Firebase project only.
+9. PDF export of the reviewed summary.
+10. Qualified-vs-declined dashboard (intake KPIs).
+
+The rules engine is already isolated, so persistence and reporting bolt on
+without touching qualification logic. Keep it that way.
+
+## Do not
+
+- Do not deploy into any existing Firebase project. This gets its own.
+- Do not add a build step, framework, or npm dependency to v1. The zero-install
+  property is a feature — it means the demo opens from a folder anywhere.
+- Do not soften or remove any disclaimer, the audit line, or the review gate.
+- Do not add real statute citations presented as verified, or claim the
+  screening logic is legally accurate.
+- Do not commit an API key, and do not add key persistence to localStorage.
