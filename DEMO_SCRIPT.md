@@ -1,5 +1,5 @@
 # Partners Demo Script — Lemon Law Intake Qualifier
-### 5 minutes. Rehearse with a timer. Stop talking when a beat lands.
+### ~6 minutes. Rehearse with a timer. Stop talking when a beat lands.
 
 **Setup before the meeting:** app open in a clean browser window, Rivera case loaded, rules panel closed, mock mode on. Nothing to type, nothing to log into. If sharing over Zoom, share the window, not the screen.
 
@@ -35,7 +35,29 @@ Change days-out-of-service from 30 to 25. Verdict recomputes live; version stamp
 
 Close the panel. (Reload the page after the meeting to reset the edit.)
 
-## 2:30 — Borderline case + checklist (60 sec)
+
+## 2:30 — The procedural fork (45 sec) — **the second-best moment**
+
+Still in the rules panel. Scroll to **Manufacturer opt-in registry**. It's empty.
+
+> "AB 1755 created something new at intake, and it's the part I'd want to talk to
+> you about. It's opt-in — manufacturers elect in or they don't. So every case
+> now forks, and that fork drives the notice requirement, the mediation window,
+> and your limitations date. That's not a legal question. It's a routing
+> question, and routing questions are what software is for."
+
+Type a manufacturer into the registry, check "Opted in," click Add. The track
+badge flips to Fast Track and the deadline appears.
+
+> "This list is empty because I don't know which manufacturers opted in, and I'm
+> not going to guess in a tool I'm showing to lemon law attorneys. You populate
+> it once. Then the system applies it to every case, computes the limitations
+> date from your intervals, tells you which rule controlled, and never has a bad
+> day."
+
+Say the empty part out loud. It's the strong move, not the awkward one.
+
+## 3:15 — Borderline case + checklist (60 sec)
 
 Click **Okafor — electrical drain**. Verdict: **PROMISING — NEEDS DOCUMENTATION**.
 
@@ -45,7 +67,7 @@ Point at the document checklist. Toggle one item missing → requested:
 
 > "The checklist is generated per case — every repair order by date, contract, warranty booklet, manufacturer communications. Your reps chase documents with a list instead of from memory."
 
-## 3:30 — The summary + human gate (60 sec)
+## 4:15 — The summary + human gate (45 sec)
 
 Click **Generate draft** in the Attorney intake summary panel.
 
@@ -55,7 +77,7 @@ Edit one word in the textarea. Click **Mark reviewed & save** — point at the R
 
 > "And if anyone touches the case data after approval, the reviewed status is revoked automatically. An approval only covers the inputs it was given. That's the same human-in-the-loop gate my email agent runs in production — nothing sends, nothing counts, without a person signing off."
 
-## 4:30 — Close (30 sec)
+## 5:00 — Close (30 sec)
 
 Click **Petrosyan** briefly — LIKELY NOT QUALIFIED — one sentence: "And clear declines get a clear answer with the reason on the record."
 
@@ -71,5 +93,6 @@ End on the question. Their answer tells you what to build next — and turns the
 
 - **"Is the legal logic right?"** — "The thresholds are the § 793.22 presumption guideline as a starting point, deliberately shipped as demo values for your attorneys to validate. I'd never put screening logic in front of clients that counsel hasn't signed off on — that's why the config is the centerpiece."
 - **"What's the stack?"** — "Plain JavaScript, no framework, no backend — right-sized for a demo. Production version: same rules-engine pattern with persistence, roles, and the audit log in a real datastore. I build on GCP/Firebase; I'd fit it to whatever integrates cleanest with Filevine."
+- **"Where did the AB 1755 numbers come from?"** — "Public reporting, and the sources disagreed on the notice operative date. That disagreement is why they're config values with 'verify with counsel' on them instead of constants in the code. Tell me the right numbers and they're right everywhere in thirty seconds."
 - **"Does it use AI?"** — "The summary panel does — behind the human gate. The qualification itself is deliberately deterministic: rules your attorneys set, not a model's opinion. AI where judgment drafts, rules where consistency matters, humans where it counts."
 - **"How long to make this real?"** — Don't invent a number. "Depends on your intake flow and Filevine setup — that's discovery, and it's the first conversation I'd want."

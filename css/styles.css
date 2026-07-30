@@ -521,6 +521,7 @@ html, body {
 
 .hidden { display: none !important; }
 
+/* Keep outputs visible while the (much taller) intake form scrolls */
 @media (min-width: 981px) {
   .outputs-column {
     position: sticky;
