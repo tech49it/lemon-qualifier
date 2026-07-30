@@ -2,7 +2,7 @@
 
 A working demonstration of an intake-qualification workflow for a California lemon law practice. An intake rep captures a prospective client's vehicle, warranty, defect, and repair history; the system screens the case against configurable Song-Beverly presumption guidelines and produces three outputs: a qualification assessment, a document checklist, and an attorney-ready intake summary.
 
-Built by Andre Ciasca ([github.com/tech49it](https://github.com/tech49it)) as a technical demonstration. **Everything in it is demo logic with fictional data. Nothing here is legal advice.**
+Built by Andre C ([github.com/tech49it](https://github.com/tech49it)) as a technical demonstration. **Everything in it is demo logic with fictional data. Nothing here is legal advice.**
 
 ## Why it's built this way
 
