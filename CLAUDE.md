@@ -64,7 +64,15 @@ Separation is strict and must stay strict: qualification logic lives only in
 5. **Fictional data only.** Never add real names, real dealers, real VINs, or
    anything resembling real client information.
 6. **Runs offline.** Mock LLM is the default. The demo must work with no
-   network. No API key is ever committed or persisted.
+   network. No API key is ever committed or persisted. Verification links are
+   plain anchors — never fetch an external API.
+7. **The manufacturer opt-in registry ships empty.** Do not populate it with
+   real manufacturer names and opt-in status. No verified public roster exists,
+   and a wrong one in a public repo aimed at lemon law attorneys is the exact
+   failure this project avoids. The empty state is a feature; say so in the UI.
+8. **Deadline output is arithmetic, not opinion.** Every date carries the basis
+   string naming which configured rule produced it. Never label a computed date
+   as a limitations determination.
 
 ## Known simplifications, flagged for counsel review
 
@@ -74,6 +82,10 @@ Separation is strict and must stay strict: qualification logic lives only in
 - Used-vehicle and lease coverage is simplified; the warranty answer drives a
   hard gate rather than nuanced analysis.
 - The presumption window check uses the first repair visit only.
+- AB 1755 / SB 26 intervals are demo values. Public sources disagreed on the
+  pre-suit notice operative date (April 1 vs July 1, 2025).
+- The Rodriguez used-vehicle screen asks one question and flags it. CPO status
+  is an attorney determination the app does not attempt.
 
 These are noted in source comments. Keep them visible rather than quietly
 "fixing" them into false precision.

@@ -20,7 +20,7 @@
    * starting point only — VERIFY CURRENT STATUTE WITH COUNSEL.
    * --------------------------------------------------------------------- */
   var RULES_CONFIG = {
-    version: '1.0.0-demo',
+    version: '1.1.0-demo',
     label: 'CA Song-Beverly presumption guideline (demo values)',
     verifyWithCounsel: true,
 
@@ -57,7 +57,50 @@
 
     /* Day-counting convention: (date out − date in), same-day visit = 1.
      * Counting convention itself must be VERIFIED WITH COUNSEL. */
-    dayCounting: 'out-minus-in, minimum 1 per visit'
+    dayCounting: 'out-minus-in, minimum 1 per visit',
+
+    /* -------------------------------------------------------------------
+     * PROCEDURAL TRACK — AB 1755 / SB 26 opt-in framework
+     *
+     * ALL VALUES ARE DEMO ONLY. VERIFY WITH COUNSEL.
+     *
+     * AB 1755 (signed Sept 2024) and cleanup bill SB 26 created an
+     * opt-in framework: manufacturers may elect into fast-track
+     * procedures. Public sources disagreed on the operative date for the
+     * pre-suit notice rules (April 1 vs July 1, 2025). That disagreement
+     * is exactly why these are configuration, not assertions.
+     * ----------------------------------------------------------------- */
+    proceduralTracks: {
+      enabled: true,
+      fastTrack: {
+        label: 'Fast track (manufacturer opted in)',
+        presuitNoticeDays: 30,           // VERIFY WITH COUNSEL
+        mediationWindowDays: 150,        // VERIFY WITH COUNSEL — from answer
+        solYearsAfterWarrantyExpiry: 1,  // VERIFY WITH COUNSEL
+        solCapYearsFromDelivery: 6       // VERIFY WITH COUNSEL
+      },
+      traditionalTrack: {
+        label: 'Traditional Song-Beverly track',
+        note: 'Manufacturer did not opt in. Pre-suit notice and mediation timing follow prior practice. Attorney determines applicable deadlines.'
+      },
+      warnDaysBeforeSol: 120
+    },
+
+    /* Attorney-maintained. Keys are lowercase, trimmed manufacturer names.
+     * SHIPS EMPTY BY DESIGN — the firm populates this. We do not have a
+     * verified opt-in roster and will not guess at one. */
+    manufacturerRegistry: {
+      // 'example motors': { optedIn: true, effectiveFrom: '2025-01-01', note: '' }
+    },
+
+    /* Post-Rodriguez used-vehicle screening. VERIFY WITH COUNSEL.
+     * Rodriguez v. FCA US LLC (Cal. 2024) narrowed Song-Beverly coverage
+     * for used vehicles. CPO sold with a manufacturer-issued warranty at
+     * time of sale may still qualify. Attorney determination required. */
+    usedVehicleScreening: {
+      enabled: true,
+      requireManufacturerWarrantyAtSale: true
+    }
   };
 
   /* ----------------------------- helpers -------------------------------- */
@@ -271,11 +314,206 @@
     };
   }
 
+  /* ----------------------- procedural track ------------------------------ */
+
+  function addYears(date, years) {
+    if (!date) return null;
+    var d = new Date(date.getTime());
+    d.setFullYear(d.getFullYear() + years);
+    return d;
+  }
+
+  function daysBetween(from, to) {
+    if (!from || !to) return null;
+    return Math.round((to - from) / 86400000);
+  }
+
+  function fmtDate(d) {
+    if (!d) return null;
+    return d.toISOString().slice(0, 10);
+  }
+
+  /**
+   * resolveTrack(caseData, config) -> { status, label, manufacturerKey, detail }
+   * status: 'fast_track' | 'traditional' | 'unknown'
+   * Pure lookup. Makes no legal determination.
+   */
+  function resolveTrack(caseData, config) {
+    var cfg = config || RULES_CONFIG;
+    var registry = cfg.manufacturerRegistry || {};
+    var raw = (caseData.vehicle && caseData.vehicle.make) || '';
+    var key = String(raw).trim().toLowerCase();
+    var registryEmpty = Object.keys(registry).length === 0;
+
+    if (!key) {
+      return {
+        status: 'unknown',
+        label: 'Track undetermined',
+        manufacturerKey: null,
+        detail: 'No manufacturer entered. Track cannot be resolved.'
+      };
+    }
+
+    if (registryEmpty) {
+      return {
+        status: 'unknown',
+        label: 'Track undetermined',
+        manufacturerKey: key,
+        detail: 'No manufacturer opt-in registry has been configured. The firm\u2019s attorneys maintain this list; once populated, every case routes automatically.'
+      };
+    }
+
+    var entry = registry[key];
+    if (!entry) {
+      return {
+        status: 'unknown',
+        label: 'Track undetermined',
+        manufacturerKey: key,
+        detail: 'No registry entry for "' + raw + '". Attorney must confirm whether this manufacturer elected into the fast-track procedures.'
+      };
+    }
+
+    if (entry.optedIn) {
+      return {
+        status: 'fast_track',
+        label: cfg.proceduralTracks.fastTrack.label,
+        manufacturerKey: key,
+        detail: 'Registry lists this manufacturer as opted in' +
+          (entry.effectiveFrom ? ' (effective ' + entry.effectiveFrom + ')' : '') + '.'
+      };
+    }
+
+    return {
+      status: 'traditional',
+      label: cfg.proceduralTracks.traditionalTrack.label,
+      manufacturerKey: key,
+      detail: cfg.proceduralTracks.traditionalTrack.note
+    };
+  }
+
+  /**
+   * computeDeadlines(caseData, track, config) -> [{ id, label, date, daysRemaining, severity, basis }]
+   * Calendar arithmetic on attorney-configured intervals. Not a limitations opinion.
+   */
+  function computeDeadlines(caseData, track, config) {
+    var cfg = config || RULES_CONFIG;
+    var ft = cfg.proceduralTracks.fastTrack;
+    var out = [];
+    var today = new Date();
+
+    if (!track || track.status !== 'fast_track') {
+      out.push({
+        id: 'sol',
+        label: 'Statute of limitations',
+        date: null,
+        daysRemaining: null,
+        severity: 'info',
+        basis: track && track.status === 'traditional'
+          ? 'Traditional track \u2014 limitations analysis is an attorney determination, not computed here.'
+          : 'Track undetermined \u2014 no deadline computed.'
+      });
+      return out;
+    }
+
+    var delivery = parseDate(caseData.vehicle.purchaseDate);
+    var warrantyEnd = parseDate(caseData.warranty.expirationDate);
+
+    if (!warrantyEnd || !delivery) {
+      var missing = [];
+      if (!delivery) missing.push('delivery date');
+      if (!warrantyEnd) missing.push('warranty expiration date');
+      out.push({
+        id: 'sol',
+        label: 'Statute of limitations',
+        date: null,
+        daysRemaining: null,
+        severity: 'warning',
+        basis: 'Cannot compute \u2014 missing ' + missing.join(' and ') + '.'
+      });
+    } else {
+      var candA = addYears(warrantyEnd, ft.solYearsAfterWarrantyExpiry);
+      var candB = addYears(delivery, ft.solCapYearsFromDelivery);
+      var eff = candA <= candB ? candA : candB;
+      var controlled = candA <= candB
+        ? ft.solYearsAfterWarrantyExpiry + ' year(s) after warranty expiry'
+        : ft.solCapYearsFromDelivery + ' year cap from delivery';
+      var rem = daysBetween(today, eff);
+      out.push({
+        id: 'sol',
+        label: 'Statute of limitations (earlier of two rules)',
+        date: fmtDate(eff),
+        daysRemaining: rem,
+        severity: rem < 0 ? 'critical' : (rem <= cfg.proceduralTracks.warnDaysBeforeSol ? 'warning' : 'info'),
+        basis: 'Controlled by ' + controlled + '. Other candidate: ' +
+          fmtDate(candA <= candB ? candB : candA) + '.'
+      });
+    }
+
+    out.push({
+      id: 'presuit',
+      label: 'Pre-suit notice period',
+      date: null,
+      daysRemaining: null,
+      severity: 'info',
+      basis: ft.presuitNoticeDays + ' days. A duration, not a fixed date \u2014 runs from service of the notice.'
+    });
+
+    out.push({
+      id: 'mediation',
+      label: 'Mediation window',
+      date: null,
+      daysRemaining: null,
+      severity: 'info',
+      basis: ft.mediationWindowDays + ' days from the manufacturer\u2019s answer. Duration, not a fixed date.'
+    });
+
+    return out;
+  }
+
+  /**
+   * screenUsedVehicle(caseData, config) -> { flagged, severity, message }
+   */
+  function screenUsedVehicle(caseData, config) {
+    var cfg = config || RULES_CONFIG;
+    var scr = cfg.usedVehicleScreening;
+
+    if (!scr || !scr.enabled || caseData.vehicle.condition !== 'used') {
+      return { flagged: false, severity: 'info', message: null };
+    }
+
+    var atSale = caseData.warranty.warrantyIssuedAtSale;
+
+    if (atSale === 'no') {
+      return {
+        flagged: true,
+        severity: 'critical',
+        message: 'Used vehicle with no manufacturer warranty issued at sale. Rodriguez v. FCA US LLC (Cal. 2024) narrowed Song-Beverly coverage for used vehicles. Attorney review required before declining \u2014 other consumer-protection claims may still apply.'
+      };
+    }
+
+    if (atSale === 'unsure') {
+      return {
+        flagged: true,
+        severity: 'warning',
+        message: 'Used vehicle, warranty-at-sale status unconfirmed. Request the sales contract and warranty documentation before attorney review. Post-Rodriguez, this is the controlling question for coverage.'
+      };
+    }
+
+    return {
+      flagged: false,
+      severity: 'info',
+      message: 'Used vehicle reported as sold with a manufacturer warranty. Whether it qualifies as CPO under Rodriguez is an attorney determination.'
+    };
+  }
+
   global.LemonRules = {
     RULES_CONFIG: RULES_CONFIG,
     evaluateCase: evaluateCase,
     computeDerived: computeDerived,
-    inputsHash: inputsHash
+    inputsHash: inputsHash,
+    resolveTrack: resolveTrack,
+    computeDeadlines: computeDeadlines,
+    screenUsedVehicle: screenUsedVehicle
   };
 
 })(typeof window !== 'undefined' ? window : globalThis);

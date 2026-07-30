@@ -1,6 +1,7 @@
 /* =========================================================================
  * sampleCases.js — three preloaded demo cases. ALL DATA IS FICTIONAL.
- * Names, phone numbers, VIN-less vehicles, dealers: invented for the demo.
+ * Names, phone numbers, VINs, dealers: invented for the demo.
+ * VINs are deliberately not valid 17-char VINs — they are placeholders.
  * ========================================================================= */
 
 (function (global) {
@@ -21,9 +22,15 @@
         year: '2025', make: 'Chevrolet', model: 'Silverado 1500',
         condition: 'new', purchaseType: 'purchase',
         purchaseDate: '2025-04-14', dealer: 'Westside Chevrolet (demo)',
-        mileageAtPurchase: '12', currentMileage: '13850'
+        mileageAtPurchase: '12', currentMileage: '13850',
+        vin: 'DEMO0000000000001'
       },
-      warranty: { active: 'yes', type: 'Manufacturer new-vehicle (bumper-to-bumper)' },
+      warranty: {
+        active: 'yes',
+        type: 'Manufacturer new-vehicle (bumper-to-bumper)',
+        expirationDate: '2028-04-14',
+        warrantyIssuedAtSale: 'yes'
+      },
       problem: {
         description: 'Intermittent loss of brake pressure. Pedal goes soft, twice to the floor at speed. Grinding noise preceded first failure.',
         safetyRelated: 'yes'
@@ -49,9 +56,15 @@
         year: '2024', make: 'Hyundai', model: 'Tucson',
         condition: 'new', purchaseType: 'lease',
         purchaseDate: '2025-01-20', dealer: 'Harbor Hyundai (demo)',
-        mileageAtPurchase: '8', currentMileage: '17400'
+        mileageAtPurchase: '8', currentMileage: '17400',
+        vin: 'DEMO0000000000002'
       },
-      warranty: { active: 'unsure', type: 'Believed under factory warranty — booklet not provided' },
+      warranty: {
+        active: 'unsure',
+        type: 'Believed under factory warranty — booklet not provided',
+        expirationDate: '2030-01-20',
+        warrantyIssuedAtSale: 'yes'
+      },
       problem: {
         description: 'Battery drains overnight; vehicle intermittently fails to start. Dash electronics flicker. Stranded twice.',
         safetyRelated: 'unsure'
@@ -77,9 +90,15 @@
         year: '2016', make: 'BMW', model: '328i',
         condition: 'used', purchaseType: 'purchase',
         purchaseDate: '2026-01-05', dealer: 'Fairfax Motors (independent, demo)',
-        mileageAtPurchase: '84200', currentMileage: '87950'
+        mileageAtPurchase: '84200', currentMileage: '87950',
+        vin: 'DEMO0000000000003'
       },
-      warranty: { active: 'no', type: 'Original factory warranty expired; sold as-is' },
+      warranty: {
+        active: 'no',
+        type: 'Original factory warranty expired; sold as-is',
+        expirationDate: '',
+        warrantyIssuedAtSale: 'no'
+      },
       problem: {
         description: 'Oil leak from valve cover area, burning smell after long drives.',
         safetyRelated: 'no'
@@ -99,9 +118,10 @@
       contact: { name: '', phone: '', email: '', city: '' },
       vehicle: {
         year: '', make: '', model: '', condition: 'new', purchaseType: 'purchase',
-        purchaseDate: '', dealer: '', mileageAtPurchase: '', currentMileage: ''
+        purchaseDate: '', dealer: '', mileageAtPurchase: '', currentMileage: '',
+        vin: ''
       },
-      warranty: { active: 'unsure', type: '' },
+      warranty: { active: 'unsure', type: '', expirationDate: '', warrantyIssuedAtSale: 'unsure' },
       problem: { description: '', safetyRelated: 'unsure' },
       repairs: [
         { dateIn: '', dateOut: '', mileage: '', shop: '', reported: '', done: '', resolved: false, samePrimaryDefect: true }

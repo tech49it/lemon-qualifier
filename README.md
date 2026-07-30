@@ -16,6 +16,38 @@ This demo applies the same design pattern I use in production systems (an AI ema
 
 **4. Runs offline by default.** The LLM summary uses a mock generator so the demo works with zero network. A live-mode toggle calls the OpenAI API for local demonstration only — in any real deployment that call moves behind a server the firm controls, and no key ever ships client-side.
 
+## The procedural layer (v1.1)
+
+California's AB 1755 (signed September 2024) and the cleanup bill SB 26 created
+an **opt-in** framework: manufacturers may elect into fast-track procedures.
+That put a fork into every intake that did not exist before 2025 — opted-in
+manufacturers carry a pre-suit notice requirement, a mediation window, and a
+different limitations calculation.
+
+Neither side of that fork requires legal judgment at intake. It is a lookup plus
+date arithmetic. So the app does three things:
+
+**Track routing.** Enter the manufacturer, and the system resolves the case to
+fast track, traditional, or undetermined. The opt-in roster is a config table
+the firm's attorneys maintain — **it ships empty on purpose.** No verified
+public roster exists, and guessing at one in a tool aimed at lemon law attorneys
+would defeat the point. The empty state says so plainly.
+
+**Deadline arithmetic.** On the fast track, the effective limitations date is
+the earlier of two configured rules (years after warranty expiry, or a cap from
+delivery). The output names which rule controlled and what the other candidate
+was. It is arithmetic on attorney-supplied intervals, labeled as such — not a
+limitations opinion.
+
+**Post-Rodriguez screening.** *Rodriguez v. FCA US LLC* (Cal. 2024) narrowed
+Song-Beverly coverage for used vehicles. When condition is "used," the form asks
+one additional question — was a manufacturer warranty issued at sale — and flags
+the case for attorney determination.
+
+**Verification links.** NHTSA recalls and complaints, and the California Bureau
+of Automotive Repair, with one-click VIN copy. Plain links, no API calls, no
+legal claims.
+
 ## Architecture
 
 ```

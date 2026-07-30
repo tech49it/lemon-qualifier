@@ -63,6 +63,7 @@
         windowLine,
         '',
         'Screen result: ' + assessment.verdictLabel + ' (rules v' + assessment.audit.ruleVersion + ', demo thresholds — verify with counsel).',
+        (assessment.procedural ? 'Procedural track: ' + assessment.procedural.label + '. ' + assessment.procedural.detail : ''),
         'Recommended next step: ' + nextStep
       ];
     } else {
@@ -75,6 +76,7 @@
         windowLine,
         '',
         'Preliminary screen: ' + assessment.verdictLabel + '. Demo rules v' + assessment.audit.ruleVersion + ' — thresholds require attorney validation.',
+        (assessment.procedural ? 'Procedural track: ' + assessment.procedural.label + '.' : ''),
         'Next step: ' + nextStep
       ];
     }
