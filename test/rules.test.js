@@ -253,8 +253,61 @@ check('both mock variants carry swing factor and every flag',
 
 
 /* v1.0 behaviour unchanged; version bumped */
-check('rules version bumped to 1.2.1', R.RULES_CONFIG.version === '1.2.1-demo');
+check('rules version bumped to 1.3.0', R.RULES_CONFIG.version === '1.3.0-demo');
 
+
+
+
+/* ================= Output 5: value screen ================= */
+require('../js/closedCases.js');
+var CC = globalThis.LemonClosed;
+
+/* Rivera (strong, safety, priced): full buyback candidate + exact offset math */
+var rivera = S.SAMPLE_CASES[0];
+var aR = R.evaluateCase(rivera, R.RULES_CONFIG);
+var vR = R.estimateValue(rivera, aR, R.RULES_CONFIG);
+check('value: Rivera tier is FULL_BUYBACK_CANDIDATE', vR.tier === 'FULL_BUYBACK_CANDIDATE');
+var expOffset = Math.round(58900 * ((6480 - 12) / 120000));
+check('value: Rivera offset arithmetic exact', vR.exposure.offsetAmount === expOffset);
+check('value: Rivera net = price - offset', vR.exposure.net === 58900 - expOffset);
+check('value: audit stamp carried from assessment', vR.audit.inputsHash === aR.audit.inputsHash);
+
+/* Not-qualified case follows the qualification screen */
+var pet = S.SAMPLE_CASES[2];
+var aP = R.evaluateCase(pet, R.RULES_CONFIG);
+var vP = R.estimateValue(pet, aP, R.RULES_CONFIG);
+check('value: not-qualified -> LIKELY_DECLINE', vP.tier === 'LIKELY_DECLINE');
+
+/* Missing price: strong verdict held at ATTORNEY_REVIEW, exposure null */
+var noPrice = JSON.parse(JSON.stringify(rivera));
+noPrice.vehicle.purchasePrice = '';
+var aN = R.evaluateCase(noPrice, R.RULES_CONFIG);
+var vN = R.estimateValue(noPrice, aN, R.RULES_CONFIG);
+check('value: missing price -> ATTORNEY_REVIEW', vN.tier === 'ATTORNEY_REVIEW');
+check('value: missing price -> exposure null', vN.exposure.net === null);
+
+/* Exposure floor config is honored */
+var cfgF = JSON.parse(JSON.stringify(R.RULES_CONFIG));
+cfgF.valueScreen.exposureReviewFloor = 999999;
+var vF = R.estimateValue(rivera, R.evaluateCase(rivera, cfgF), cfgF);
+check('value: raised floor demotes to ATTORNEY_REVIEW', vF.tier === 'ATTORNEY_REVIEW');
+
+/* Penalty factors: never an amount, states are constrained */
+check('value: penalty factors surface no dollar amount',
+  JSON.stringify(vR.civilPenalty).indexOf('$') === -1);
+check('value: factor states valid', vR.civilPenalty.factors.every(function (f) {
+  return ['present', 'absent', 'unknown'].indexOf(f.state) !== -1;
+}));
+
+/* Comparables: deterministic, top-3, sorted, fictional-labeled */
+var dR = R.computeDerived(rivera);
+var c1 = CC.findComparables(rivera, dR, { limit: 3 });
+var c2 = CC.findComparables(rivera, dR, { limit: 3 });
+check('comps: deterministic', JSON.stringify(c1) === JSON.stringify(c2));
+check('comps: returns 3', c1.matches.length === 3);
+check('comps: sorted desc by match', c1.matches[0].matchPct >= c1.matches[1].matchPct && c1.matches[1].matchPct >= c1.matches[2].matchPct);
+check('comps: note declares fictional data', c1.note.toLowerCase().indexOf('fictional') !== -1);
+check('comps: Rivera top match is a truck profile', c1.matches[0].label.toLowerCase().indexOf('pickup') !== -1);
 
 console.log(failures === 0 ? '\nAll checks passed.' : '\n' + failures + ' failure(s).');
 process.exit(failures === 0 ? 0 : 1);

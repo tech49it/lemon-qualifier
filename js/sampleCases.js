@@ -23,7 +23,7 @@
       vehicle: {
         year: '2025', make: 'Chevrolet', model: 'Silverado 1500',
         condition: 'new', purchaseType: 'purchase',
-        purchaseDate: '2025-04-14', dealer: 'Westside Chevrolet (demo)',
+        purchaseDate: '2025-04-14', purchasePrice: '58900', dealer: 'Westside Chevrolet (demo)',
         mileageAtPurchase: '12', currentMileage: '13850',
         vin: 'DEMO0000000000001'
       },
@@ -59,7 +59,7 @@
       vehicle: {
         year: '2024', make: 'Hyundai', model: 'Tucson',
         condition: 'new', purchaseType: 'lease',
-        purchaseDate: '2025-01-20', dealer: 'Harbor Hyundai (demo)',
+        purchaseDate: '2025-01-20', purchasePrice: '39500', dealer: 'Harbor Hyundai (demo)',
         mileageAtPurchase: '8', currentMileage: '17400',
         vin: 'DEMO0000000000002'
       },
@@ -95,7 +95,7 @@
       vehicle: {
         year: '2016', make: 'BMW', model: '328i',
         condition: 'used', purchaseType: 'purchase',
-        purchaseDate: '2026-01-05', dealer: 'Fairfax Motors (independent, demo)',
+        purchaseDate: '2026-01-05', purchasePrice: '18500', dealer: 'Fairfax Motors (independent, demo)',
         mileageAtPurchase: '84200', currentMileage: '87950',
         vin: 'DEMO0000000000003'
       },
@@ -126,7 +126,7 @@
       contact: { name: '', phone: '', email: '', city: '' },
       vehicle: {
         year: '', make: '', model: '', condition: 'new', purchaseType: 'purchase',
-        purchaseDate: '', dealer: '', mileageAtPurchase: '', currentMileage: '',
+        purchaseDate: '', purchasePrice: '', dealer: '', mileageAtPurchase: '', currentMileage: '',
         vin: ''
       },
       warranty: { active: 'unsure', type: '', expirationDate: '', warrantyIssuedAtSale: 'unsure' },

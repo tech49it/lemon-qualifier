@@ -905,3 +905,18 @@ html, body {
   .rules-grid { grid-template-columns: 1fr 96px; }
   .verdict { font-size: 23px; }
 }
+
+/* ---- Output 5: case value & priority ---- */
+.value-arith {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 13px;
+  line-height: 2;
+  background: var(--surface-2);
+  border: 1px solid var(--rule-strong);
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 6px 0 4px;
+}
+.value-net { font-weight: 600; border-top: 1px solid var(--rule-strong); margin-top: 4px; padding-top: 4px; }
+.comps-table td { vertical-align: top; }
+.comps-table .criterion-detail { margin: 2px 0 0; }

@@ -173,6 +173,7 @@
     if (rebuildChecklist) { buildChecklist(); }
     renderComputedStrip();
     renderAssessment();
+    renderValuePanel();
     renderTrackPanel();
     renderChecklistPanel();            /* reflect the revoked doc-request review + any rebuilt items */
     renderSummaryPanel();
@@ -206,6 +207,7 @@
     vg.appendChild(field('Condition', condSel));
     vg.appendChild(field('Purchase type', selectInput(c.vehicle, 'purchaseType', [['purchase', 'Purchase'], ['lease', 'Lease']], true)));
     vg.appendChild(field('Purchase / delivery date', textInput(c.vehicle, 'purchaseDate', { type: 'date' })));
+    vg.appendChild(field('Purchase price ($)', textInput(c.vehicle, 'purchasePrice', { type: 'number' })));
     vg.appendChild(field('Dealer', textInput(c.vehicle, 'dealer'), true));
     vg.appendChild(field('Mileage at purchase', textInput(c.vehicle, 'mileageAtPurchase', { type: 'number' })));
     vg.appendChild(field('Current mileage', textInput(c.vehicle, 'currentMileage', { type: 'number' })));
@@ -394,6 +396,10 @@
     ruleRow('Cumulative days out of service (threshold)', function () { return cfg.criteria.daysOutOfService.threshold; }, function (v) { cfg.criteria.daysOutOfService.threshold = v; });
     ruleRow('Presumption window — months from delivery', function () { return cfg.presumptionWindow.months; }, function (v) { cfg.presumptionWindow.months = v; });
     ruleRow('Presumption window — miles from delivery', function () { return cfg.presumptionWindow.miles; }, function (v) { cfg.presumptionWindow.miles = v; });
+    if (cfg.valueScreen) {
+      ruleRow('Value screen — mileage offset denominator', function () { return cfg.valueScreen.mileageOffsetDenominator; }, function (v) { cfg.valueScreen.mileageOffsetDenominator = v; });
+      ruleRow('Value screen — exposure review floor ($)', function () { return cfg.valueScreen.exposureReviewFloor; }, function (v) { cfg.valueScreen.exposureReviewFloor = v; });
+    }
 
     body.appendChild(grid);
 
@@ -494,6 +500,7 @@
     state.summary.reviewed = false;
     revokeReviewIfNeeded('screening rules edited');
     renderAssessment();
+    renderValuePanel();
     renderTrackPanel();
     renderSummaryPanel();
     renderReviewPanel();
@@ -505,6 +512,7 @@
 
   function renderOutputs() {
     renderAssessment();
+    renderValuePanel();
     renderTrackPanel();
     renderChecklistPanel();
     renderSummaryPanel();
@@ -563,6 +571,98 @@
     body.appendChild(el('div', {
       class: 'audit-line',
       text: 'Assessed ' + nowStamp() + ' \u00b7 rules v' + a.audit.ruleVersion + ' \u00b7 inputs #' + a.audit.inputsHash + ' \u00b7 mode: local demo'
+    }));
+  }
+
+  /* ------ Output 5: case value & priority (screening view) ------ */
+
+  function fmtMoney(n) {
+    return (n === null || n === undefined) ? '\u2014' : '$' + Number(n).toLocaleString();
+  }
+
+  function renderValuePanel() {
+    var body = $('#value-body');
+    if (!body) return;
+    var a = state.lastAssessment || Rules.evaluateCase(state.caseData, state.config);
+    var v = Rules.estimateValue(state.caseData, a, state.config);
+    body.innerHTML = '';
+
+    /* Tier badge — reuses the semantic verdict tints */
+    var tierClass = v.tier === 'FULL_BUYBACK_CANDIDATE' ? 'STRONG'
+      : v.tier === 'LIKELY_DECLINE' ? 'NOT_QUALIFIED' : 'PROMISING';
+    body.appendChild(el('div', {
+      class: 'verdict ' + tierClass, text: v.tierLabel,
+      role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true'
+    }));
+    v.reasoning.forEach(function (r) {
+      body.appendChild(el('p', { class: 'criterion-detail', text: r }));
+    });
+
+    /* Exposure arithmetic — shown as arithmetic, with its basis */
+    body.appendChild(el('div', { class: 'form-section-title', text: 'Estimated repurchase exposure (screening arithmetic \u2014 not a valuation)' }));
+    var ex = el('div', { class: 'value-arith' });
+    ex.appendChild(el('div', { text: 'Purchase price: ' + fmtMoney(v.exposure.price) }));
+    ex.appendChild(el('div', { text: 'Mileage offset: ' + (v.exposure.offsetAmount === null ? '\u2014' : '\u2212 ' + fmtMoney(v.exposure.offsetAmount)) +
+      (v.exposure.offsetMiles !== null ? '  (' + fmtMiles(v.exposure.offsetMiles) + ' mi at first repair)' : '') }));
+    ex.appendChild(el('div', { class: 'value-net', text: 'Estimated net exposure: ' + fmtMoney(v.exposure.net) }));
+    body.appendChild(ex);
+    body.appendChild(el('p', { class: 'criterion-detail', text: v.exposure.basis }));
+
+    /* Civil-penalty posture — factors, never an amount */
+    body.appendChild(el('div', { class: 'form-section-title',
+      text: 'Civil-penalty posture \u2014 ' + v.civilPenalty.presentCount + ' of ' + v.civilPenalty.total + ' screening factors present' }));
+    var ledger = el('div', { class: 'criteria-ledger' });
+    v.civilPenalty.factors.forEach(function (f) {
+      ledger.appendChild(el('div', { class: 'criterion' }, [
+        el('div', { class: 'criterion-stamp ' + (f.state === 'present' ? 'met' : 'miss'),
+          text: f.state === 'present' ? 'PRESENT' : (f.state === 'unknown' ? 'UNKNOWN' : 'ABSENT') }),
+        el('div', {}, [ el('p', { class: 'criterion-detail', text: f.label }) ])
+      ]));
+    });
+    body.appendChild(ledger);
+    body.appendChild(el('p', { class: 'criterion-detail', text: v.civilPenalty.note }));
+    body.appendChild(el('p', { class: 'criterion-detail', text: v.feePosture }));
+
+    /* Comparable outcomes — fictional sample, clearly labeled */
+    if (window.LemonClosed) {
+      var derived = Rules.computeDerived(state.caseData);
+      var comps = LemonClosed.findComparables(state.caseData, derived, { limit: 3 });
+      body.appendChild(el('div', { class: 'form-section-title', text: 'Comparable outcomes (fictional sample data)' }));
+      var table = el('table', { class: 'audit-table comps-table' });
+      var thead = el('thead', {}, [ el('tr', {}, [
+        el('th', { text: 'Closed matter (fictional)' }),
+        el('th', { text: 'Profile match' }),
+        el('th', { text: 'Resolution' }),
+        el('th', { text: 'Time' })
+      ])]);
+      table.appendChild(thead);
+      var tbody = el('tbody');
+      comps.matches.forEach(function (m) {
+        tbody.appendChild(el('tr', {}, [
+          el('td', {}, [
+            el('div', { text: m.label }),
+            el('div', { class: 'criterion-detail', text: m.matchWhy })
+          ]),
+          el('td', { class: 'audit-ts', text: m.matchPct + '%' }),
+          el('td', { text: m.outcome }),
+          el('td', { class: 'audit-ts', text: m.monthsToResolve + ' mo' })
+        ]));
+      });
+      table.appendChild(tbody);
+      var compsScroll = el('div', { class: 'audit-scroll' });   /* comps table scrolls on narrow screens, same as the audit table */
+      compsScroll.appendChild(table);
+      body.appendChild(compsScroll);
+      body.appendChild(el('p', { class: 'criterion-detail', text: comps.summary }));
+      body.appendChild(el('p', { class: 'criterion-detail', text: comps.note }));
+    }
+
+    body.appendChild(el('div', { class: 'disclaimer' }, [
+      el('strong', { text: 'Demo \u2014 preliminary screening only. ' }),
+      document.createTextNode('Triage arithmetic from configured rules; not a valuation, prediction, or decision. Attorney review required on every tier. Rules are illustrative; verify current statute.')
+    ]));
+    body.appendChild(el('div', {
+      class: 'audit-line',
+      text: 'Value screen ' + nowStamp() + ' \u00b7 rules v' + v.audit.ruleVersion + ' \u00b7 inputs #' + v.audit.inputsHash + ' \u00b7 mode: local demo'
     }));
   }
 

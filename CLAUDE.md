@@ -9,15 +9,18 @@ information belongs in here.
 A working demo of an intake-qualification workflow for a California lemon law
 practice. An intake rep captures vehicle, warranty, defect, and repair history;
 the app screens the case against configurable Song-Beverly presumption
-guidelines and produces four outputs: qualification assessment, procedural
-track & deadlines, document checklist, and an attorney-ready intake summary.
+guidelines and produces five outputs: qualification assessment, procedural
+track & deadlines, document checklist, an attorney-ready intake summary, and
+a case value & priority screen (v1.3.0) that surfaces likely full-repurchase
+candidates — offset arithmetic, civil-penalty factor posture, and fictional
+comparable outcomes — so attorney hours go where recovery justifies them.
 
 It is a portfolio and demonstration piece. All data is fictional. All screening
 thresholds are demo values pending attorney validation.
 
 ## Status
 
-Deployed and live at https://tech49it.github.io/lemon-qualifier/ — version `1.2.1-demo`, test suite passing (`node test/rules.test.js`, 49/49).
+Deployed and live at https://tech49it.github.io/lemon-qualifier/ — version `1.3.0-demo`, test suite passing (`node test/rules.test.js`, 64/64).
 
 ## Stack
 
@@ -33,6 +36,8 @@ css/styles.css        design system, no framework
 js/rules.js           RULES_CONFIG + evaluateCase() — pure function, no DOM,
                       no network; runs identically in Node for testing
 js/sampleCases.js     three fictional cases + blank template
+js/closedCases.js     FICTIONAL closed-case sample + findComparables() —
+                      pure weighted field matching, no ML, no network
 js/llm.js             summary generator: mock (default) + live OpenAI adapter
 js/app.js             UI state and rendering only — zero business logic
 firebase.json         Firebase Hosting config (public dir = root, noindex)
@@ -78,6 +83,15 @@ Separation is strict and must stay strict: qualification logic lives only in
     conclusion, and every summary notes the thresholds are demo values pending
     attorney validation.
 
+11. **The value screen triages; it never values.** Output 5's tier is
+    screening arithmetic from configured rules (offset denominator and
+    exposure floor live in `RULES_CONFIG.valueScreen`, editable in the UI,
+    verify-with-counsel). It never estimates a civil-penalty amount —
+    willfulness is a legal determination — and comparable outcomes are a
+    fictional sample labeled as such, presented as context, never as a
+    predicted or promised result. Production comparables query the firm's
+    own resolved matters; the demo never fakes that as real.
+
 ## Known simplifications, flagged for counsel review
 
 - Day counting: (date out − date in), same-day visit counts as 1.
@@ -88,6 +102,11 @@ Separation is strict and must stay strict: qualification logic lives only in
 - The presumption window check uses the first repair visit only.
 - AB 1755 / SB 26 intervals are demo values. Public sources disagreed on the
   pre-suit notice operative date (April 1 vs July 1, 2025).
+- Value screen: offset uses miles at first same-defect visit; incidental
+  damages, down payment vs. cash price, and trade-in are not modeled.
+  Exposure is screening arithmetic, not a damages calculation.
+- Comparables match on structured fields only (class, make, safety,
+  attempt/days bands) — no semantic matching of complaint text.
 - The Rodriguez used-vehicle screen asks one question and flags it. CPO status
   is an attorney determination the app does not attempt.
 

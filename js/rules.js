@@ -20,7 +20,7 @@
    * starting point only — VERIFY CURRENT STATUTE WITH COUNSEL.
    * --------------------------------------------------------------------- */
   var RULES_CONFIG = {
-    version: '1.2.1-demo',
+    version: '1.3.0-demo',
     label: 'CA Song-Beverly presumption guideline (demo values)',
     verifyWithCounsel: true,
 
@@ -100,6 +100,41 @@
     usedVehicleScreening: {
       enabled: true,
       requireManufacturerWarrantyAtSale: true
+    },
+
+    /* -------------------------------------------------------------------
+     * VALUE SCREEN — case value & priority (screening arithmetic only)
+     *
+     * ALL VALUES ARE DEMO ONLY. VERIFY WITH COUNSEL.
+     *
+     * Purpose: help intake surface likely full-repurchase candidates so
+     * attorney hours go where recovery justifies them. This is triage
+     * arithmetic from configured rules — it is not a valuation, not a
+     * settlement prediction, and never a decision. Attorney review is
+     * required on every tier.
+     * ----------------------------------------------------------------- */
+    valueScreen: {
+      enabled: true,
+      /* Statutory mileage-offset convention: price × (miles at first
+       * repair attempt for the defect ÷ denominator). Civ. Code
+       * § 1793.2(d)(2)(C) uses 120,000 — cited as the demo's starting
+       * point only. VERIFY WITH COUNSEL. */
+      mileageOffsetDenominator: 120000,
+      /* Estimated net repurchase exposure below this promotes the tier
+       * to ATTORNEY REVIEW instead of FULL BUYBACK CANDIDATE. Pure
+       * screening heuristic — the firm sets where "small case" begins.
+       * VERIFY WITH COUNSEL. */
+      exposureReviewFloor: 15000,
+      /* Civil-penalty posture: factors are surfaced as present/absent
+       * for attorney assessment. The screen never estimates a penalty
+       * amount — willfulness is a legal determination. */
+      civilPenaltyFactorLabels: {
+        attemptsBeyondThreshold: 'Repair attempts continued beyond the configured presumption threshold',
+        safetyDefectUnresolved: 'Safety-related defect reported and still unresolved after final recorded visit',
+        extendedDaysOut: 'Days out of service exceed the configured threshold',
+        multipleShops: 'Defect presented at more than one authorized repair facility',
+        windowMet: 'First repair fell inside the configured presumption window'
+      }
     }
   };
 
@@ -626,9 +661,115 @@
     };
   }
 
+  /* ----------------------- value screen ---------------------------------
+   * estimateValue(caseData, assessment, config) -> valueScreen
+   * Pure function. No DOM, no network. Screening arithmetic from the
+   * configured rules — never a valuation, never a decision.
+   * `assessment` is the object returned by evaluateCase() for the same
+   * caseData/config, so verdict logic is never duplicated here.
+   * --------------------------------------------------------------------- */
+  function estimateValue(caseData, assessment, config) {
+    var cfg = config || RULES_CONFIG;
+    var vs = cfg.valueScreen || {};
+    var d = computeDerived(caseData);
+    var reasoning = [];
+
+    /* --- repurchase exposure: price − statutory-style mileage offset --- */
+    var price = num(caseData.vehicle.purchasePrice);
+    var milesAtPurchase = num(caseData.vehicle.mileageAtPurchase);
+    var relevant = (caseData.repairs || []).filter(function (r) { return r.samePrimaryDefect; });
+    var first = relevant.slice().sort(function (a, b) {
+      return (parseDate(a.dateIn) || Infinity) - (parseDate(b.dateIn) || Infinity);
+    })[0] || null;
+    var milesAtFirst = first ? num(first.mileage) : null;
+    var offsetMiles = (milesAtPurchase !== null && milesAtFirst !== null)
+      ? Math.max(0, milesAtFirst - milesAtPurchase) : null;
+
+    var exposure = null, offsetAmount = null, offsetBasis;
+    if (price !== null && offsetMiles !== null && vs.mileageOffsetDenominator) {
+      offsetAmount = Math.round(price * (offsetMiles / vs.mileageOffsetDenominator));
+      exposure = Math.max(0, price - offsetAmount);
+      offsetBasis = 'Offset = price \u00d7 (' + offsetMiles.toLocaleString() + ' mi at first repair \u00f7 ' +
+        vs.mileageOffsetDenominator.toLocaleString() + ') per configured denominator \u2014 demo convention, verify with counsel.';
+    } else if (price === null) {
+      offsetBasis = 'Purchase price not provided \u2014 exposure cannot be computed. Request the purchase contract.';
+      reasoning.push('Exposure unknown: purchase price missing from intake.');
+    } else {
+      offsetBasis = 'First-repair mileage or purchase mileage missing \u2014 offset cannot be computed.';
+      reasoning.push('Exposure unknown: mileage figures incomplete.');
+    }
+
+    /* --- civil-penalty posture: factors surfaced, never an amount --- */
+    var labels = vs.civilPenaltyFactorLabels || {};
+    var shops = {};
+    relevant.forEach(function (r) { if (r.shop) shops[r.shop.toLowerCase().trim()] = true; });
+    var lastVisit = relevant[relevant.length - 1] || null;
+    var factors = [
+      { id: 'attemptsBeyondThreshold', present: d.attempts > cfg.criteria.sameDefectAttempts.threshold },
+      { id: 'safetyDefectUnresolved', present: caseData.problem.safetyRelated === 'yes' && !!lastVisit && lastVisit.resolved === false,
+        unknown: caseData.problem.safetyRelated === 'unsure' },
+      { id: 'extendedDaysOut', present: d.daysOut > cfg.criteria.daysOutOfService.threshold },
+      { id: 'multipleShops', present: Object.keys(shops).length > 1 },
+      { id: 'windowMet', present: assessment.window.state === 'met', unknown: assessment.window.state === 'unknown' }
+    ].map(function (f) {
+      return { id: f.id, label: labels[f.id] || f.id,
+        state: f.unknown ? 'unknown' : (f.present ? 'present' : 'absent') };
+    });
+    var presentCount = factors.filter(function (f) { return f.state === 'present'; }).length;
+
+    /* --- fee posture: statute-based note, attorney confirms --- */
+    var feePosture = (caseData.warranty.active === 'no')
+      ? 'Fee-shifting posture uncertain \u2014 warranty gate unresolved. Attorney determination required.'
+      : 'Song-Beverly fee-shifting generally applies to a prevailing buyer \u2014 demo note, verify with counsel.';
+
+    /* --- tier: derived from configured rules; basis stated per line --- */
+    var tier, tierLabel;
+    if (assessment.verdict === 'NOT_QUALIFIED') {
+      tier = 'LIKELY_DECLINE'; tierLabel = 'LIKELY DECLINE';
+      reasoning.push('Screening verdict is LIKELY NOT QUALIFIED \u2014 value tier follows the qualification screen.');
+    } else if (assessment.verdict === 'STRONG' && exposure !== null && exposure >= (vs.exposureReviewFloor || 0)) {
+      tier = 'FULL_BUYBACK_CANDIDATE'; tierLabel = 'FULL BUYBACK CANDIDATE';
+      reasoning.push('STRONG screening verdict and estimated exposure $' + exposure.toLocaleString() +
+        ' meets the configured review floor ($' + (vs.exposureReviewFloor || 0).toLocaleString() + ').');
+    } else {
+      tier = 'ATTORNEY_REVIEW'; tierLabel = 'ATTORNEY REVIEW';
+      if (assessment.verdict === 'STRONG' && exposure === null) {
+        reasoning.push('STRONG screening verdict, but exposure could not be computed \u2014 tier held at review until price/mileage documented.');
+      } else if (assessment.verdict === 'STRONG') {
+        reasoning.push('STRONG screening verdict, but estimated exposure $' + exposure.toLocaleString() +
+          ' is below the configured review floor ($' + (vs.exposureReviewFloor || 0).toLocaleString() + ') \u2014 attorney decides whether the case size fits the docket.');
+      } else {
+        reasoning.push('Screening verdict is ' + assessment.verdictLabel + ' \u2014 attorney review before prioritization.');
+      }
+    }
+
+    return {
+      tier: tier,
+      tierLabel: tierLabel,
+      reasoning: reasoning,
+      exposure: {
+        price: price,
+        offsetMiles: offsetMiles,
+        offsetAmount: offsetAmount,
+        net: exposure,
+        basis: offsetBasis,
+        denominator: vs.mileageOffsetDenominator || null
+      },
+      civilPenalty: {
+        factors: factors,
+        presentCount: presentCount,
+        total: factors.length,
+        note: 'Willfulness is a legal determination. The screen surfaces factors for attorney assessment and never estimates a penalty amount.'
+      },
+      feePosture: feePosture,
+      audit: assessment.audit
+    };
+  }
+
   global.LemonRules = {
     RULES_CONFIG: RULES_CONFIG,
     evaluateCase: evaluateCase,
+    estimateValue: estimateValue,
     computeDerived: computeDerived,
     inputsHash: inputsHash,
     resolveTrack: resolveTrack,
