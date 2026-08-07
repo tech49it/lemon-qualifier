@@ -174,6 +174,7 @@
     renderComputedStrip();
     renderAssessment();
     renderValuePanel();
+    renderTopline();
     renderTrackPanel();
     renderChecklistPanel();            /* reflect the revoked doc-request review + any rebuilt items */
     renderSummaryPanel();
@@ -501,6 +502,7 @@
     revokeReviewIfNeeded('screening rules edited');
     renderAssessment();
     renderValuePanel();
+    renderTopline();
     renderTrackPanel();
     renderSummaryPanel();
     renderReviewPanel();
@@ -513,6 +515,7 @@
   function renderOutputs() {
     renderAssessment();
     renderValuePanel();
+    renderTopline();
     renderTrackPanel();
     renderChecklistPanel();
     renderSummaryPanel();
@@ -572,6 +575,40 @@
       class: 'audit-line',
       text: 'Assessed ' + nowStamp() + ' \u00b7 rules v' + a.audit.ruleVersion + ' \u00b7 inputs #' + a.audit.inputsHash + ' \u00b7 mode: local demo'
     }));
+  }
+
+  /* ------ topline: the four signals at a glance (rendering only) ------ */
+
+  function renderTopline() {
+    var wrap = $('#topline');
+    if (!wrap) return;
+    var a = state.lastAssessment || Rules.evaluateCase(state.caseData, state.config);
+    var v = Rules.estimateValue(state.caseData, a, state.config);
+    wrap.innerHTML = '';
+
+    function chip(cls, label, value, targetSel) {
+      var c = el('div', {
+        class: 'topline-chip ' + cls,
+        role: 'button', tabindex: '0',
+        title: 'Jump to detail',
+        onclick: function () {
+          var t = $(targetSel);
+          if (t && t.closest('.panel')) t.closest('.panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, [
+        el('div', { class: 'topline-label', text: label }),
+        el('div', { class: 'topline-value', text: value })
+      ]);
+      wrap.appendChild(c);
+    }
+
+    var tierCls = v.tier === 'FULL_BUYBACK_CANDIDATE' ? 'STRONG'
+      : v.tier === 'LIKELY_DECLINE' ? 'NOT_QUALIFIED' : 'PROMISING';
+    chip(a.verdict, 'Screening', a.verdictLabel, '#assessment-body');
+    chip(tierCls, 'Value tier', v.tierLabel, '#value-body');
+    chip(tierCls, 'Est. net exposure', v.exposure.net === null ? '\u2014 (incomplete)' : fmtMoney(v.exposure.net), '#value-body');
+    chip(v.civilPenalty.presentCount >= 3 ? 'STRONG' : 'PROMISING',
+      'Penalty factors', v.civilPenalty.presentCount + ' of ' + v.civilPenalty.total + ' present', '#value-body');
   }
 
   /* ------ Output 5: case value & priority (screening view) ------ */

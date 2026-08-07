@@ -253,7 +253,7 @@ check('both mock variants carry swing factor and every flag',
 
 
 /* v1.0 behaviour unchanged; version bumped */
-check('rules version bumped to 1.3.0', R.RULES_CONFIG.version === '1.3.0-demo');
+check('rules version bumped to 1.4.0', R.RULES_CONFIG.version === '1.4.0-demo');
 
 
 

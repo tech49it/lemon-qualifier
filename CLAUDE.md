@@ -20,7 +20,7 @@ thresholds are demo values pending attorney validation.
 
 ## Status
 
-Deployed and live at https://tech49it.github.io/lemon-qualifier/ — version `1.3.0-demo`, test suite passing (`node test/rules.test.js`, 64/64).
+Deployed and live at https://tech49it.github.io/lemon-qualifier/ — version `1.4.0-demo`, test suite passing (`node test/rules.test.js`, 64/64).
 
 ## Stack
 

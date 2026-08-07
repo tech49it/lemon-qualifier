@@ -20,7 +20,7 @@
    * starting point only — VERIFY CURRENT STATUTE WITH COUNSEL.
    * --------------------------------------------------------------------- */
   var RULES_CONFIG = {
-    version: '1.3.0-demo',
+    version: '1.4.0-demo',
     label: 'CA Song-Beverly presumption guideline (demo values)',
     verifyWithCounsel: true,
 

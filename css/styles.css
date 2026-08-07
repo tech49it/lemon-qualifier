@@ -584,15 +584,12 @@ html, body {
 
 .hidden { display: none !important; }
 
-/* Keep outputs visible while the (much taller) intake form scrolls */
+/* v1.4.0 — outputs flow with the page. The former sticky inner-scroll
+   column hid everything below the first two outputs behind an inner
+   scrollbar; a solo reviewer scrolling the page never found Outputs 3-5.
+   Natural document flow: everything reachable by normal scrolling. */
 @media (min-width: 981px) {
-  .outputs-column {
-    position: sticky;
-    top: 18px;
-    align-self: start;
-    max-height: calc(100vh - 36px);
-    overflow-y: auto;
-  }
+  .outputs-column { align-self: start; }
 }
 
 /* ---------------------------- repair timeline --------------------------- */
@@ -927,3 +924,51 @@ html, body {
 .comps-table { table-layout: auto; }
 .comps-table th, .comps-table td { white-space: normal; }
 .comps-table td:first-child { min-width: 200px; }
+
+
+/* ---- v1.4.0: topline — the four signals at a glance ---- */
+.topline {
+  max-width: 1460px;
+  margin: 0 auto;
+  padding: 14px 40px 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.topline-chip {
+  border: 1px solid var(--rule-strong);
+  border-radius: 10px;
+  padding: 10px 14px;
+  background: var(--panel);
+  cursor: pointer;
+  min-width: 0;
+}
+.topline-chip:hover { border-color: var(--ink-faint); }
+.topline-label {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.topline-value {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.topline-chip.STRONG        { background: var(--strong-bg);  border-color: var(--strong-line);  }
+.topline-chip.STRONG .topline-value { color: var(--strong); }
+.topline-chip.PROMISING     { background: var(--caution-bg); border-color: var(--caution-line); }
+.topline-chip.PROMISING .topline-value { color: var(--caution); }
+.topline-chip.NOT_QUALIFIED { background: var(--fail-bg);    border-color: var(--fail-line);    }
+.topline-chip.NOT_QUALIFIED .topline-value { color: var(--fail); }
+@media (max-width: 980px) {
+  .topline { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 12px 16px 0; }
+}
+/* the money figure reads at arm's length */
+.value-net { font-size: 16px; }
