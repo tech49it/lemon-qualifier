@@ -753,6 +753,11 @@
       track.appendChild(rule);
       var lbl = el('div', { class: 'timeline-rule-label', text: 'Presumption window' });
       lbl.style.left = pct(t.presumption.frac);
+      /* v1.4.1: when the boundary sits in the right part of the track, anchor
+         the label to the left of the rule so it never clips the panel edge. */
+      if (t.presumption.frac > 0.6) {
+        lbl.style.transform = 'translateX(calc(-100% - 5px))';
+      }
       track.appendChild(lbl);
     }
 
