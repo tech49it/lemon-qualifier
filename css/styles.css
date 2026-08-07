@@ -920,3 +920,10 @@ html, body {
 .value-net { font-weight: 600; border-top: 1px solid var(--rule-strong); margin-top: 4px; padding-top: 4px; }
 .comps-table td { vertical-align: top; }
 .comps-table .criterion-detail { margin: 2px 0 0; }
+
+/* v1.3.1 — comps table wraps instead of scrolling: match-reason text is
+   prose, not log data, and clipped text on a partner's screen is a bug.
+   The .audit-scroll wrapper remains as a no-op fallback once content fits. */
+.comps-table { table-layout: auto; }
+.comps-table th, .comps-table td { white-space: normal; }
+.comps-table td:first-child { min-width: 200px; }
