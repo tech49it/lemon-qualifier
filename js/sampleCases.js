@@ -2,6 +2,15 @@
  * sampleCases.js — three preloaded demo cases. ALL DATA IS FICTIONAL.
  * Names, phone numbers, VINs, dealers: invented for the demo.
  * VINs are deliberately not valid 17-char VINs — they are placeholders.
+ *
+ * v2.0.0: each repair visit now also carries the RO facsimile fields the
+ * Stage 01 extraction reads — `ro` (repair-order number), `invoice` (invoice
+ * date, which may deliberately conflict with dateOut), and `conf` (per-field
+ * confidence 0-100). These are additive; the screening figures each case
+ * produces (verdict, attempts, days out, exposure) are unchanged from v1.4.
+ * The Rivera visit dates were adjusted so two visits at DIFFERENT dealers
+ * overlap — the merged days-out total still equals 34, but the naive sum (39)
+ * and the 5 de-duplicated days now render, exercising the OVERLAP flag.
  * ========================================================================= */
 
 (function (global) {
@@ -37,10 +46,14 @@
         description: 'Intermittent loss of brake pressure. Pedal goes soft, twice to the floor at speed. Grinding noise preceded first failure.',
         safetyRelated: 'yes'
       },
+      /* Three same-defect visits. V2 (RO 51044) carries an invoice/date-out
+       * conflict; V3 (RO 52990) is at a second dealer, overlaps V2, and uses
+       * "could not duplicate / no fault found" language. Merged days out = 34
+       * (naive 39 − 5 overlapping). First-visit mileage 6,480 drives the offset. */
       repairs: [
-        { dateIn: '2025-09-02', dateOut: '2025-09-12', mileage: '6480', shop: 'Westside Chevrolet (demo)', reported: 'Brakes grinding, pedal soft', done: 'Replaced master cylinder', resolved: false, samePrimaryDefect: true },
-        { dateIn: '2025-11-20', dateOut: '2025-12-05', mileage: '9900', shop: 'Westside Chevrolet (demo)', reported: 'Pedal went to floor on freeway', done: 'Replaced brake booster, bled system', resolved: false, samePrimaryDefect: true },
-        { dateIn: '2026-02-10', dateOut: '2026-02-19', mileage: '12300', shop: 'Valley Chevrolet Service (demo)', reported: 'Same intermittent pressure loss', done: 'ABS module replaced, software update', resolved: false, samePrimaryDefect: true }
+        { ro: 'RO 48213', dateIn: '2025-09-02', dateOut: '2025-09-12', invoice: '2025-09-12', mileage: '6480', shop: 'Westside Chevrolet (demo)', reported: 'Brakes grinding, pedal soft', done: 'Replaced master cylinder', resolved: false, samePrimaryDefect: true, conf: { dates: 99, miles: 98, complaint: 96 } },
+        { ro: 'RO 51044', dateIn: '2025-11-20', dateOut: '2025-12-05', invoice: '2025-12-03', mileage: '9900', shop: 'Westside Chevrolet (demo)', reported: 'Pedal went to floor on freeway', done: 'Replaced brake booster, bled system', resolved: false, samePrimaryDefect: true, conf: { dates: 97, miles: 99, complaint: 95 } },
+        { ro: 'RO 52990', dateIn: '2025-11-30', dateOut: '2025-12-14', invoice: '2025-12-14', mileage: '10480', shop: 'Valley Chevrolet Service (demo)', reported: 'Same intermittent pressure loss; tech could not duplicate at this time', done: 'Road tested — no fault found this visit; ABS module flagged for follow-up', resolved: false, samePrimaryDefect: true, conf: { dates: 98, miles: 88, complaint: 97 } }
       ]
     },
 
@@ -73,10 +86,12 @@
         description: 'Battery drains overnight; vehicle intermittently fails to start. Dash electronics flicker. Stranded twice.',
         safetyRelated: 'unsure'
       },
+      /* Single-dealer history (no overlap). V2 (RO 21830) carries an
+       * invoice/date-out conflict to exercise the DATE flag on extraction. */
       repairs: [
-        { dateIn: '2025-06-10', dateOut: '2025-06-17', mileage: '7200', shop: 'Harbor Hyundai (demo)', reported: 'No-start, dead battery', done: 'Replaced battery', resolved: false, samePrimaryDefect: true },
-        { dateIn: '2025-10-01', dateOut: '2025-10-10', mileage: '12900', shop: 'Harbor Hyundai (demo)', reported: 'No-start recurring, flickering dash', done: 'Parasitic draw test, replaced body control module', resolved: false, samePrimaryDefect: true },
-        { dateIn: '2026-01-15', dateOut: '2026-01-20', mileage: '16750', shop: 'Harbor Hyundai (demo)', reported: 'Same drain issue', done: 'Wiring harness inspection, software update', resolved: false, samePrimaryDefect: true }
+        { ro: 'RO 20441', dateIn: '2025-06-10', dateOut: '2025-06-17', invoice: '2025-06-17', mileage: '7200', shop: 'Harbor Hyundai (demo)', reported: 'No-start, dead battery', done: 'Replaced battery', resolved: false, samePrimaryDefect: true, conf: { dates: 99, miles: 97, complaint: 98 } },
+        { ro: 'RO 21830', dateIn: '2025-10-01', dateOut: '2025-10-10', invoice: '2025-10-08', mileage: '12900', shop: 'Harbor Hyundai (demo)', reported: 'No-start recurring, flickering dash', done: 'Parasitic draw test, replaced body control module', resolved: false, samePrimaryDefect: true, conf: { dates: 96, miles: 99, complaint: 96 } },
+        { ro: 'RO 22957', dateIn: '2026-01-15', dateOut: '2026-01-20', invoice: '2026-01-20', mileage: '16750', shop: 'Harbor Hyundai (demo)', reported: 'Same drain issue', done: 'Wiring harness inspection, software update', resolved: false, samePrimaryDefect: true, conf: { dates: 98, miles: 98, complaint: 97 } }
       ]
     },
 
@@ -110,7 +125,7 @@
         safetyRelated: 'no'
       },
       repairs: [
-        { dateIn: '2026-03-03', dateOut: '2026-03-06', mileage: '86100', shop: 'Fairfax Motors service (demo)', reported: 'Oil leak, burning smell', done: 'Replaced valve cover gasket', resolved: false, samePrimaryDefect: true }
+        { ro: 'RO 77120', dateIn: '2026-03-03', dateOut: '2026-03-06', invoice: '2026-03-06', mileage: '86100', shop: 'Fairfax Motors service (demo)', reported: 'Oil leak, burning smell', done: 'Replaced valve cover gasket', resolved: false, samePrimaryDefect: true, conf: { dates: 97, miles: 95, complaint: 98 } }
       ]
     }
   ];
@@ -132,7 +147,7 @@
       warranty: { active: 'unsure', type: '', expirationDate: '', warrantyIssuedAtSale: 'unsure' },
       problem: { description: '', safetyRelated: 'unsure' },
       repairs: [
-        { dateIn: '', dateOut: '', mileage: '', shop: '', reported: '', done: '', resolved: false, samePrimaryDefect: true }
+        { ro: '', dateIn: '', dateOut: '', invoice: '', mileage: '', shop: '', reported: '', done: '', resolved: false, samePrimaryDefect: true, conf: { dates: 0, miles: 0, complaint: 0 } }
       ]
     };
   }
