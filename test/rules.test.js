@@ -1,5 +1,9 @@
-/* Plain Node test — no framework. Run: node test/rules.test.js */
+/* Plain Node test — no framework. Run: node test/rules.test.js
+ * v1.4 behavior-parity guard. The pure engine now lives in js/engine.js
+ * (rules.js is config-only as of v2.0.0); both attach to the LemonRules
+ * namespace, so this suite is unchanged apart from loading engine.js. */
 require('../js/rules.js');
+require('../js/engine.js');
 require('../js/sampleCases.js');
 require('../js/llm.js');
 
@@ -253,7 +257,7 @@ check('both mock variants carry swing factor and every flag',
 
 
 /* v1.0 behaviour unchanged; version bumped */
-check('rules version bumped to 1.4.0', R.RULES_CONFIG.version === '1.4.0-demo');
+check('rules version bumped to 2.0.0', R.RULES_CONFIG.version === '2.0.0-demo');
 
 
 
