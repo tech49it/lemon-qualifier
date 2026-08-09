@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lemon Law Intake Qualifier — v2 Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700;800&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F6F5F1;
+  --doc:#FFFFFF;
+  --ink:#171A1F;
+  --ink-2:#4C5561;
+  --ink-3:#8A919C;
+  --rule:#DCD9D0;
+  --hl:#FFE23B;
+  --hl-soft:#FFF3B8;
+  --ok:#1E7A4A;
+  --ok-bg:#E7F3EC;
+  --flag:#A03C2E;
+  --flag-bg:#F7E9E6;
+  --amber:#8A6400;
+  --amber-bg:#FBF3D9;
+  --sans:'Libre Franklin',system-ui,-apple-system,sans-serif;
+  --serif:'Source Serif 4',Georgia,serif;
+  --mono:'IBM Plex Mono','SF Mono',Menlo,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+a{color:var(--ink)}
+
+/* ---------- shell ---------- */
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 80px}
+header.site{padding:34px 0 0}
+.masthead{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px 18px;border-bottom:3px solid var(--ink);padding-bottom:16px}
+.masthead h1{font-size:clamp(24px,3.4vw,34px);font-weight:800;letter-spacing:-.02em}
+.masthead .sub{color:var(--ink-2);font-size:14px}
+.banner{margin-top:14px;background:var(--ink);color:var(--paper);padding:10px 14px;font-size:13px;border-radius:3px}
+.banner strong{color:var(--hl)}
+
+/* ---------- toolbar ---------- */
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:22px 0 8px;position:sticky;top:0;background:var(--paper);padding:12px 0;z-index:30;border-bottom:1px solid var(--rule)}
+.chip{border:1.5px solid var(--ink);background:var(--doc);padding:7px 13px;border-radius:20px;font-size:13.5px;font-weight:600}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.chip:hover{background:var(--hl-soft)}
+.chip[aria-pressed="true"]:hover{background:var(--ink)}
+.ver{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--ink-2);background:var(--doc);border:1px solid var(--rule);padding:6px 10px;border-radius:3px}
+
+/* ---------- stages ---------- */
+.stage{margin-top:34px}
+.stage-head{display:flex;align-items:baseline;gap:14px;border-bottom:1.5px solid var(--ink);padding-bottom:8px;margin-bottom:16px}
+.stage-num{font-family:var(--mono);font-size:12px;color:var(--ink-2);letter-spacing:.08em}
+.stage-head h2{font-size:19px;font-weight:700;letter-spacing:-.01em}
+.stage-head .tag{margin-left:auto;font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-2)}
+.panel{background:var(--doc);border:1px solid var(--rule);border-radius:4px;padding:18px}
+.note{font-size:13px;color:var(--ink-2);margin-top:10px}
+.note strong{color:var(--ink)}
+
+/* ---------- stage 1: documents ---------- */
+.docgrid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px}
+@media(max-width:860px){.docgrid{grid-template-columns:1fr}}
+.tray{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.doc-tab{border:1px solid var(--rule);background:var(--paper);padding:6px 11px;border-radius:3px;font-family:var(--mono);font-size:12px;color:var(--ink-2)}
+.doc-tab.active{border-color:var(--ink);color:var(--ink);background:var(--doc)}
+.doc-tab.done::after{content:" ✓";color:var(--ok)}
+.facsimile{background:var(--doc);border:1px solid var(--ink);border-radius:2px;padding:18px 20px;font-family:var(--mono);font-size:12.5px;line-height:1.7;box-shadow:3px 3px 0 var(--rule);min-height:340px}
+.facsimile .fx-head{border-bottom:1.5px dashed var(--ink);padding-bottom:8px;margin-bottom:10px}
+.facsimile .fx-dealer{font-weight:600;font-size:13px;letter-spacing:.03em}
+.facsimile .fx-row{display:flex;justify-content:space-between;gap:12px;border-bottom:1px dotted var(--rule);padding:2px 0}
+.facsimile .fx-label{color:var(--ink-3)}
+.facsimile .fx-block{margin-top:10px}
+.facsimile .fx-block .fx-label{display:block;margin-bottom:2px}
+mark.x{background:linear-gradient(120deg,var(--hl) 0%,var(--hl) 100%) no-repeat;background-size:0% 100%;color:inherit;padding:1px 2px;border-radius:2px;transition:background-size .45s ease}
+mark.x.on{background-size:100% 100%}
+@media(prefers-reduced-motion:reduce){mark.x{transition:none}}
+.extract-bar{display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap}
+.btn{background:var(--ink);color:var(--paper);border:1.5px solid var(--ink);padding:9px 16px;border-radius:3px;font-weight:600;font-size:14px}
+.btn:hover{background:#000}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:var(--doc);color:var(--ink)}
+.btn.ghost:hover{background:var(--hl-soft)}
+.extract-status{font-family:var(--mono);font-size:12px;color:var(--ink-2)}
+/* ledger */
+.ledger{border:1px solid var(--rule);border-radius:3px;overflow:hidden}
+.ledger-head{background:var(--paper);border-bottom:1px solid var(--rule);padding:9px 12px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+.ledger-body{max-height:420px;overflow-y:auto}
+.lrow{display:grid;grid-template-columns:98px 1fr 44px;gap:10px;padding:7px 12px;border-bottom:1px solid var(--rule);font-size:12.5px;align-items:start}
+.lrow:last-child{border-bottom:none}
+.lrow .f{color:var(--ink-3);font-size:11.5px;padding-top:1px}
+.lrow .v{font-family:var(--mono)}
+.lrow .c{font-family:var(--mono);font-size:11px;text-align:right;color:var(--ink-2)}
+.lrow .c.low{color:var(--amber);font-weight:600}
+.lrow.flagrow{background:var(--amber-bg)}
+.lrow.flagrow .v{font-family:var(--sans);color:var(--ink)}
+.lrow.flagrow .f{color:var(--amber);font-weight:700}
+.ledger-sum{padding:10px 12px;font-size:13px;background:var(--ok-bg);color:var(--ok);font-weight:600;display:none}
+.ledger-sum.show{display:block}
+
+/* ---------- stage 2: case record ---------- */
+.recgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.field label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-2);margin-bottom:4px}
+.field .val{font-family:var(--mono);font-size:13.5px}
+.field select,.field input{width:100%;font-family:var(--mono);font-size:13px;padding:7px 9px;border:1px solid var(--rule);border-radius:3px;background:var(--doc);color:var(--ink)}
+.field select:hover,.field input:hover{border-color:var(--ink-2)}
+.copybtn{font-family:var(--mono);font-size:11px;border:1px solid var(--rule);background:var(--paper);padding:2px 7px;border-radius:3px;margin-left:6px}
+.copybtn:hover{background:var(--hl-soft)}
+
+/* ---------- stage 3: rules ---------- */
+.rules-note{background:var(--amber-bg);border:1px solid #E4D293;border-radius:3px;padding:10px 12px;font-size:13px;margin-bottom:14px}
+.rulegrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px}
+.rule-item{border:1px solid var(--rule);border-radius:3px;padding:12px}
+.rule-item label{display:block;font-size:12.5px;font-weight:600;margin-bottom:6px}
+.rule-item input{width:90px;font-family:var(--mono);font-size:14px;padding:6px 8px;border:1px solid var(--rule);border-radius:3px}
+.rule-item .cite{display:block;font-size:11px;color:var(--ink-3);margin-top:6px;font-family:var(--mono)}
+.roster{margin-top:16px;border:1.5px dashed var(--rule);border-radius:3px;padding:14px;font-size:13px;color:var(--ink-2)}
+.roster strong{color:var(--ink)}
+.toggle{display:flex;gap:8px;align-items:center;margin-top:10px;font-size:13px}
+.toggle input{accent-color:var(--ink);width:16px;height:16px}
+
+/* ---------- stage 4: assessment ---------- */
+.verdict{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.verdict-badge{font-weight:800;font-size:15px;padding:9px 16px;border-radius:3px;letter-spacing:.01em}
+.verdict-badge.ok{background:var(--ok-bg);color:var(--ok);border:1.5px solid var(--ok)}
+.verdict-badge.mid{background:var(--amber-bg);color:var(--amber);border:1.5px solid var(--amber)}
+.verdict-badge.no{background:var(--flag-bg);color:var(--flag);border:1.5px solid var(--flag)}
+.verdict-why{font-size:13.5px;color:var(--ink-2);flex:1;min-width:240px}
+.crit{border:1px solid var(--rule);border-radius:3px;overflow:hidden;margin-bottom:16px}
+.crow{display:grid;grid-template-columns:26px 1fr 150px;gap:10px;padding:10px 12px;border-bottom:1px solid var(--rule);font-size:13.5px;align-items:start}
+.crow:last-child{border-bottom:none}
+.crow .mark{font-weight:800}
+.crow .mark.y{color:var(--ok)}.crow .mark.n{color:var(--flag)}.crow .mark.q{color:var(--amber)}
+.crow .why{color:var(--ink-2);font-size:12.5px;margin-top:2px}
+.crow .num{font-family:var(--mono);font-size:12.5px;text-align:right;color:var(--ink-2)}
+.crow .num b{color:var(--ink)}
+/* timeline */
+.tl{margin-top:6px}
+.tl-track{position:relative;height:64px;background:var(--paper);border:1px solid var(--rule);border-radius:3px;overflow:hidden}
+.tl-bar{position:absolute;top:14px;height:20px;background:var(--ink);border-radius:2px;min-width:4px}
+.tl-bar:hover{background:#000}
+.tl-bar .tip{position:absolute;top:24px;left:0;font-family:var(--mono);font-size:10px;color:var(--ink-2);white-space:nowrap}
+.tl-window{position:absolute;top:0;bottom:0;width:2px;background:var(--flag)}
+.tl-window .wl{position:absolute;top:2px;left:5px;font-family:var(--mono);font-size:10px;color:var(--flag);white-space:nowrap}
+.tl-axis{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;color:var(--ink-3);margin-top:4px}
+.days-math{font-family:var(--mono);font-size:12px;color:var(--ink-2);margin-top:10px;background:var(--paper);border:1px solid var(--rule);border-radius:3px;padding:9px 11px}
+.days-math b{color:var(--ink)}
+
+/* ---------- stage 5: procedure ---------- */
+.track-line{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.track-pill{font-family:var(--mono);font-size:12.5px;font-weight:600;border:1.5px solid var(--ink);padding:6px 12px;border-radius:3px}
+.dl-math{border:1px solid var(--rule);border-radius:3px;padding:12px;font-size:13px}
+.dl-math .row{display:flex;justify-content:space-between;gap:14px;padding:4px 0;font-family:var(--mono);font-size:12.5px}
+.dl-math .row.ctrl{background:var(--hl-soft);margin:4px -6px 0;padding:6px;border-radius:2px;font-weight:600}
+.links{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.links a{font-size:13px;border:1px solid var(--rule);background:var(--paper);padding:6px 11px;border-radius:3px;text-decoration:none;font-weight:600}
+.links a:hover{background:var(--hl-soft)}
+
+/* ---------- checklist ---------- */
+.ck{border:1px solid var(--rule);border-radius:3px;overflow:hidden}
+.ckrow{display:flex;gap:10px;align-items:center;padding:9px 12px;border-bottom:1px solid var(--rule);font-size:13.5px}
+.ckrow:last-child{border-bottom:none}
+.ckrow input{accent-color:var(--ok);width:16px;height:16px}
+.ckrow .st{margin-left:auto;font-family:var(--mono);font-size:11px}
+.ckrow .st.miss{color:var(--flag);font-weight:600}
+.ckrow .st.have{color:var(--ok)}
+.reqdraft{margin-top:12px}
+.reqdraft textarea{width:100%;min-height:110px;font-family:var(--serif);font-size:14.5px;line-height:1.6;padding:12px;border:1px solid var(--rule);border-radius:3px;background:var(--doc);color:var(--ink);resize:vertical}
+
+/* ---------- stage 6: summary ---------- */
+.swing{background:var(--hl-soft);border:1px solid #E8D34A;border-radius:3px;padding:11px 13px;font-size:13.5px;margin-bottom:12px}
+.swing b{font-weight:700}
+.openitems{font-size:13px;color:var(--ink-2);margin-bottom:12px}
+.openitems li{margin-left:18px;margin-top:3px}
+.draft{width:100%;min-height:190px;font-family:var(--serif);font-size:15.5px;line-height:1.65;padding:16px;border:1px solid var(--rule);border-radius:3px;background:var(--doc);color:var(--ink);resize:vertical}
+.gate{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.gate input[type=text]{font-family:var(--mono);font-size:13px;width:88px;padding:8px;border:1px solid var(--rule);border-radius:3px}
+.gate-status{font-size:13px;font-weight:600;padding:6px 12px;border-radius:3px}
+.gate-status.none{color:var(--ink-3)}
+.gate-status.reviewed{background:var(--ok-bg);color:var(--ok)}
+.gate-status.revoked{background:var(--flag-bg);color:var(--flag)}
+
+/* ---------- audit ---------- */
+.audit{font-family:var(--mono);font-size:11.5px;max-height:230px;overflow-y:auto;border:1px solid var(--rule);border-radius:3px;background:var(--ink);color:#C9CFD8;padding:12px 14px;line-height:1.9}
+.audit .t{color:#7C8698}
+.audit .h{color:var(--hl)}
+
+/* ---------- footer ---------- */
+footer.site{margin-top:48px;border-top:3px solid var(--ink);padding-top:20px;font-size:13px;color:var(--ink-2)}
+footer.site h3{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);margin:16px 0 6px}
+footer.site ul{margin-left:18px}
+footer.site li{margin-top:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="site">
+  <div class="masthead">
+    <h1>Lemon Law Intake Qualifier</h1>
+    <span class="sub">v2 demo · document-first intake · human-in-the-loop by design · Andre C</span>
+  </div>
+  <div class="banner"><strong>Demonstration only.</strong> All names, vehicles, dealers, and records are fictional. Screening thresholds are illustrative values pending attorney validation — nothing here is legal advice or a final decision. Every AI or extracted output requires human review before it counts.</div>
+</header>
+
+<nav class="toolbar" aria-label="Sample cases">
+  <button class="chip" data-case="A" aria-pressed="true">Case A — Silverado stall</button>
+  <button class="chip" data-case="B" aria-pressed="false">Case B — Sportage drain</button>
+  <button class="chip" data-case="C" aria-pressed="false">Case C — used 330i</button>
+  <span class="ver" id="verChip">rules v2.0.0</span>
+</nav>
+
+<!-- STAGE 1 -->
+<section class="stage" id="s1">
+  <div class="stage-head"><span class="stage-num">STAGE 01</span><h2>Repair orders — extraction</h2><span class="tag">machine-read · verify before use</span></div>
+  <div class="panel">
+    <div class="tray" id="docTray"></div>
+    <div class="docgrid">
+      <div>
+        <div class="facsimile" id="facsimile" aria-live="polite"></div>
+        <div class="extract-bar">
+          <button class="btn" id="btnExtract">Extract repair data</button>
+          <button class="btn ghost" id="btnReset">Reset</button>
+          <span class="extract-status" id="exStatus">3 documents queued</span>
+        </div>
+      </div>
+      <div>
+        <div class="ledger">
+          <div class="ledger-head">Extraction ledger — field · value · confidence</div>
+          <div class="ledger-body" id="ledgerBody"></div>
+          <div class="ledger-sum" id="ledgerSum"></div>
+        </div>
+      </div>
+    </div>
+    <p class="note"><strong>Production note:</strong> the deployed pipeline ingests real scanned PDFs and phone photos server-side (OCR + LLM extraction behind the firm's own infrastructure). This demo renders embedded facsimiles so it runs with zero network and exposes no backend logic. Low-confidence fields are queued for human verification, never silently accepted.</p>
+  </div>
+</section>
+
+<!-- STAGE 2 -->
+<section class="stage" id="s2">
+  <div class="stage-head"><span class="stage-num">STAGE 02</span><h2>Case record</h2><span class="tag">extracted + intake-entered</span></div>
+  <div class="panel">
+    <div class="recgrid" id="recGrid"></div>
+    <p class="note">Values in <span style="font-family:var(--mono)">monospace</span> were machine-read from documents; dropdown fields are intake-entered. Editing any field revokes prior attorney review and is written to the audit log.</p>
+  </div>
+</section>
+
+<!-- STAGE 3 -->
+<section class="stage" id="s3">
+  <div class="stage-head"><span class="stage-num">STAGE 03</span><h2>Screening rules — the attorneys own these</h2><span class="tag">verify with counsel</span></div>
+  <div class="panel">
+    <div class="rules-note">Every threshold below is firm-configurable and ships as an illustrative starting point drawn from the Civ. Code § 1793.22 presumption guideline. The engine enforces the attorneys' judgment; it does not substitute for it. Editing bumps the rule version and stamps every downstream output.</div>
+    <div class="rulegrid" id="ruleGrid"></div>
+    <div class="roster">
+      <strong>Manufacturer opt-in roster (AB 1755 / SB 26): ships empty by design.</strong>
+      No verified public roster of opted-in manufacturers exists; guessing at one in a tool aimed at lemon law attorneys would defeat the point. The firm's attorneys maintain this table in production.
+      <label class="toggle"><input type="checkbox" id="hypoFast"> Assume this manufacturer opted in (hypothetical — demonstrates deadline arithmetic only)</label>
+    </div>
+  </div>
+</section>
+
+<!-- STAGE 4 -->
+<section class="stage" id="s4">
+  <div class="stage-head"><span class="stage-num">STAGE 04</span><h2>Qualification assessment</h2><span class="tag">screening, not a decision</span></div>
+  <div class="panel">
+    <div class="verdict"><span class="verdict-badge" id="vBadge"></span><span class="verdict-why" id="vWhy"></span></div>
+    <div class="crit" id="critLedger"></div>
+    <div class="tl">
+      <div class="tl-track" id="tlTrack"></div>
+      <div class="tl-axis"><span id="tlStart"></span><span style="color:var(--flag)">| presumption window end</span><span id="tlEnd"></span></div>
+      <div class="days-math" id="daysMath"></div>
+    </div>
+  </div>
+</section>
+
+<!-- STAGE 5 -->
+<section class="stage" id="s5">
+  <div class="stage-head"><span class="stage-num">STAGE 05</span><h2>Procedural track &amp; deadlines</h2><span class="tag">AB 1755 · lookup + arithmetic</span></div>
+  <div class="panel">
+    <div class="track-line"><span class="track-pill" id="trackPill"></span><span class="verdict-why" id="trackWhy"></span></div>
+    <div class="dl-math" id="dlMath"></div>
+    <div id="rodBox"></div>
+    <div class="links" id="verifyLinks"></div>
+  </div>
+</section>
+
+<!-- STAGE 6 -->
+<section class="stage" id="s6">
+  <div class="stage-head"><span class="stage-num">STAGE 06</span><h2>Document checklist &amp; client request</h2><span class="tag">drafts only — nothing transmits</span></div>
+  <div class="panel">
+    <div class="ck" id="ckList"></div>
+    <div class="reqdraft">
+      <label style="font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-2);display:block;margin-bottom:6px">Client request draft — regenerates from missing items</label>
+      <textarea id="reqText" spellcheck="false"></textarea>
+      <div class="gate"><button class="btn ghost" id="btnCopyReq">Copy draft</button><span class="extract-status">Copy-to-clipboard is the only way text leaves this panel. No mail integration, no sending.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- STAGE 7 -->
+<section class="stage" id="s7">
+  <div class="stage-head"><span class="stage-num">STAGE 07</span><h2>Attorney intake summary</h2><span class="tag">human-review gate</span></div>
+  <div class="panel">
+    <div class="swing" id="swingBox"></div>
+    <div class="openitems" id="openItems"></div>
+    <textarea class="draft" id="draftText" spellcheck="false" placeholder="Click “Generate draft” to produce an editable summary. It does not count until a person marks it reviewed."></textarea>
+    <div class="gate">
+      <button class="btn" id="btnGen">Generate draft</button>
+      <input type="text" id="initials" maxlength="4" placeholder="ABC" aria-label="Reviewer initials">
+      <button class="btn ghost" id="btnReview">Mark reviewed &amp; save</button>
+      <span class="gate-status none" id="gateStatus">Not reviewed</span>
+    </div>
+    <p class="note">If any case data or screening rule changes after review, the reviewed status is <strong>revoked automatically</strong> — an approval only covers the inputs it was given.</p>
+  </div>
+</section>
+
+<!-- STAGE 8 -->
+<section class="stage" id="s8">
+  <div class="stage-head"><span class="stage-num">STAGE 08</span><h2>Audit log</h2><span class="tag">every output is accountable</span></div>
+  <div class="panel"><div class="audit" id="auditLog" aria-live="polite"></div>
+  <p class="note">Each entry carries a timestamp, the rule version in force, and a hash of the case inputs. In production this persists to an append-only store the firm controls.</p></div>
+</section>
+
+<footer class="site">
+  <h3>Data handling in production</h3>
+  <ul>
+    <li>All extraction, prompt chains, and rules evaluation run server-side on infrastructure the firm controls. No model keys, prompts, or business logic ship client-side.</li>
+    <li>LLM calls use zero-retention API terms; client documents are not used for model training.</li>
+    <li>PII/VIN redaction available at ingestion; append-only audit log retained per firm policy.</li>
+  </ul>
+  <h3>Honesty notes</h3>
+  <ul>
+    <li>All names, vehicles, dealers, VINs, and records are fictional.</li>
+    <li>Thresholds reference the Song-Beverly Consumer Warranty Act, Civ. Code § 1793.2 et seq., and the Tanner Consumer Protection Act presumption, Civ. Code § 1793.22, as illustrative starting points requiring attorney validation.</li>
+    <li>Day-counting and attempt-grouping conventions are simplifications marked for counsel review. <em>Rodriguez v. FCA US LLC</em> (Cal. 2024) screening asks a question; it does not decide coverage.</li>
+    <li>Built by Andre C as a technical demonstration. Nothing here is legal advice.</li>
+  </ul>
+</footer>
+
+</div>
+
+<script>
+'use strict';
+
+/* ============================================================
+   RULES_CONFIG — the object the attorneys own.
+   Illustrative values drawn from Civ. Code § 1793.22 (Tanner
+   presumption). Ship-to-replace: the firm's counsel sets these.
+   ============================================================ */
+const BASE_RULES = {
+  safetyAttempts:   { v: 2,     label: 'Repair attempts — safety defect',        cite: 'Civ. Code § 1793.22(b)(1)' },
+  generalAttempts:  { v: 4,     label: 'Repair attempts — same non-safety defect', cite: 'Civ. Code § 1793.22(b)(2)' },
+  daysOut:          { v: 30,    label: 'Cumulative days out of service (>)',     cite: 'Civ. Code § 1793.22(b)(3)' },
+  windowMonths:     { v: 18,    label: 'Presumption window — months',            cite: 'Civ. Code § 1793.22(b)' },
+  windowMiles:      { v: 18000, label: 'Presumption window — miles',             cite: 'Civ. Code § 1793.22(b)' },
+  ftYearsAfterWarr: { v: 1,     label: 'Fast track: years after warranty expiry', cite: 'AB 1755 (2024) — verify' },
+  ftCapYears:       { v: 6,     label: 'Fast track: cap — years from delivery',  cite: 'AB 1755 (2024) — verify' }
+};
+
+/* ============================================================
+   SAMPLE CASES — entirely fictional.
+   ============================================================ */
+const CASES = {
+  A: {
+    label: 'Case A — Silverado stall',
+    vehicle: { year: 2022, make: 'Chevrolet', model: 'Silverado 1500', vin: '1GC-DEMO-A-004821' },
+    manufacturer: 'General Motors', condition: 'new', warrantyAtSale: 'yes',
+    delivery: '2024-11-12', deliveryMiles: 12, warrantyExpiry: '2027-11-12',
+    issue: { key: 'stall', label: 'Engine stall while driving', safety: true },
+    visits: [
+      { ro: 'RO 48213', dealer: 'SUNRISE CHEVROLET — VAN NUYS CA', dateIn: '2025-02-03', dateOut: '2025-02-11', invoice: '2025-02-11', miles: 4210,
+        complaint: 'CUSTOMER STATES VEHICLE STALLS AT HIGHWAY SPEED, RESTARTS AFTER SEVERAL MINUTES',
+        correction: 'REPROGRAMMED ECM PER TSB. ROAD TEST OK.', conf: { dates: 99, miles: 98, complaint: 96 } },
+      { ro: 'RO 51044', dealer: 'SUNRISE CHEVROLET — VAN NUYS CA', dateIn: '2025-04-14', dateOut: '2025-05-02', invoice: '2025-04-30', miles: 7882,
+        complaint: 'CUSTOMER STATES STALLING CONDITION RETURNED. VEHICLE TOWED IN.',
+        correction: 'REPLACED FUEL PUMP MODULE ASSY. PARTS ON BACKORDER 11 DAYS.', conf: { dates: 97, miles: 99, complaint: 95 } },
+      { ro: 'RO 52990', dealer: 'PACIFIC CHEVROLET — GLENDALE CA', dateIn: '2025-04-29', dateOut: '2025-05-09', invoice: '2025-05-09', miles: 7910,
+        complaint: 'CUSTOMER STATES INTERMITTENT STALL. TECH COULD NOT DUPLICATE AT THIS TIME.',
+        correction: 'NO FAULT FOUND. VEHICLE RETURNED TO CUSTOMER.', conf: { dates: 98, miles: 88, complaint: 97 } }
+    ]
+  },
+  B: {
+    label: 'Case B — Sportage drain',
+    vehicle: { year: 2024, make: 'Kia', model: 'Sportage EX', vin: 'KND-DEMO-B-011907' },
+    manufacturer: 'Kia', condition: 'new', warrantyAtSale: 'yes',
+    delivery: '2025-01-20', deliveryMiles: 8, warrantyExpiry: '2030-01-20',
+    issue: { key: 'drain', label: '12V battery drain / no-start', safety: false },
+    visits: [
+      { ro: 'RO 20441', dealer: 'HARBOR KIA — TORRANCE CA', dateIn: '2025-05-06', dateOut: '2025-05-13', invoice: '2025-05-13', miles: 3106,
+        complaint: 'CUSTOMER STATES VEHICLE DEAD AFTER SITTING 2 DAYS. JUMP START REQUIRED.',
+        correction: 'TESTED BATTERY, REPLACED UNDER WARRANTY.', conf: { dates: 99, miles: 97, complaint: 98 } },
+      { ro: 'RO 21830', dealer: 'HARBOR KIA — TORRANCE CA', dateIn: '2025-07-01', dateOut: '2025-07-09', invoice: '2025-07-09', miles: 5540,
+        complaint: 'CUSTOMER STATES NO-START CONDITION RETURNED.',
+        correction: 'FOUND PARASITIC DRAW, UPDATED BCM SOFTWARE.', conf: { dates: 98, miles: 99, complaint: 96 } },
+      { ro: 'RO 22957', dealer: 'HARBOR KIA — TORRANCE CA', dateIn: '2025-09-15', dateOut: '2025-09-22', invoice: '2025-09-22', miles: 7815,
+        complaint: 'CUSTOMER STATES BATTERY DEAD AGAIN AFTER WEEKEND.',
+        correction: 'REPLACED BODY CONTROL MODULE.', conf: { dates: 99, miles: 98, complaint: 97 } }
+    ]
+  },
+  C: {
+    label: 'Case C — used 330i',
+    vehicle: { year: 2019, make: 'BMW', model: '330i', vin: 'WBA-DEMO-C-097112' },
+    manufacturer: 'BMW', condition: 'used', warrantyAtSale: 'unknown',
+    delivery: '2025-03-08', deliveryMiles: 41230, warrantyExpiry: '2026-03-08',
+    issue: { key: 'coolant', label: 'Coolant loss / overheat warning', safety: false },
+    visits: [
+      { ro: 'RO 77120', dealer: 'WESTSIDE BMW — CULVER CITY CA', dateIn: '2025-06-10', dateOut: '2025-06-20', invoice: '2025-06-20', miles: 44102,
+        complaint: 'CUSTOMER STATES COOLANT WARNING LAMP, TOPS OFF WEEKLY.',
+        correction: 'PRESSURE TESTED, REPLACED EXPANSION TANK.', conf: { dates: 97, miles: 96, complaint: 98 } },
+      { ro: 'RO 79455', dealer: 'WESTSIDE BMW — CULVER CITY CA', dateIn: '2025-08-18', dateOut: '2025-08-29', invoice: '2025-08-29', miles: 46011,
+        complaint: 'CUSTOMER STATES COOLANT LOSS CONTINUES. OVERHEAT MESSAGE ON FREEWAY.',
+        correction: 'REPLACED WATER PUMP AND THERMOSTAT HOUSING.', conf: { dates: 98, miles: 97, complaint: 95 } }
+    ]
+  }
+};
+
+/* ============================================================
+   STATE
+   ============================================================ */
+const state = {
+  caseId: 'A',
+  rules: cloneRules(BASE_RULES),
+  ruleEdits: 0,
+  extracted: false,
+  activeDoc: 0,
+  extracting: false,
+  hypoFast: false,
+  review: { status: 'none', initials: '' },   // none | reviewed | revoked
+  checklist: {},
+  audit: []
+};
+
+function cloneRules(r){ const o={}; for(const k in r) o[k]={...r[k]}; return o; }
+function ruleVersion(){ return 'v2.0.0' + (state.ruleEdits ? '-edited.' + state.ruleEdits : ''); }
+function currentCase(){ return CASES[state.caseId]; }
+
+/* ============================================================
+   PURE ENGINE — same inputs, same verdict. No DOM access.
+   ============================================================ */
+function d(s){ return new Date(s + 'T00:00:00'); }
+function fmt(s){ return d(s).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
+function dayDiff(a,b){ return Math.round((d(b)-d(a))/86400000); }
+function addMonths(iso,m){ const x=d(iso); x.setMonth(x.getMonth()+m); return x.toISOString().slice(0,10); }
+function addYears(iso,y){ const x=d(iso); x.setFullYear(x.getFullYear()+y); return x.toISOString().slice(0,10); }
+
+/* Merge out-of-service ranges so overlapping days are never double-counted. */
+function daysOutOfService(visits){
+  const ranges = visits.map(v => [d(v.dateIn).getTime(), d(v.dateOut).getTime()])
+                       .sort((a,b)=>a[0]-b[0]);
+  let merged=[], naive=0;
+  for(const [s,e] of ranges){
+    naive += Math.round((e-s)/86400000);
+    if(merged.length && s <= merged[merged.length-1][1]){
+      merged[merged.length-1][1] = Math.max(merged[merged.length-1][1], e);
+    } else merged.push([s,e]);
+  }
+  const total = merged.reduce((t,[s,e]) => t + Math.round((e-s)/86400000), 0);
+  return { total, naive, overlap: naive-total };
+}
+
+function docFlags(c){
+  const flags=[];
+  c.visits.forEach((v,i)=>{
+    if(/COULD NOT DUPLICATE|NO FAULT FOUND/i.test(v.complaint + ' ' + v.correction))
+      flags.push({ visit:i, code:'CND', text:`${v.ro}: “could not duplicate / no fault found” language — customer reported the defect, so counted as a repair attempt (verify with counsel).` });
+    if(v.invoice !== v.dateOut)
+      flags.push({ visit:i, code:'DATE', text:`${v.ro}: invoice date ${fmt(v.invoice)} conflicts with date out ${fmt(v.dateOut)} — days-out uses date in/out; conflict queued for verification.` });
+  });
+  const dos = daysOutOfService(c.visits);
+  if(dos.overlap > 0)
+    flags.push({ visit:-1, code:'OVERLAP', text:`${dos.overlap} overlapping out-of-service day${dos.overlap>1?'s':''} across dealers de-duplicated (naive sum ${dos.naive} → ${dos.total}).` });
+  return flags;
+}
+
+function evaluateCase(c, rules){
+  const dos = daysOutOfService(c.visits);
+  const attempts = c.visits.length;                       // all visits share one issue in demo data
+  const first = c.visits[0];
+  const monthsAtFirst = (d(first.dateIn) - d(c.delivery)) / (86400000*30.44);
+  const windowEnd = addMonths(c.delivery, rules.windowMonths.v);
+  const inWindowTime  = d(first.dateIn) <= d(windowEnd);
+  const inWindowMiles = first.miles <= rules.windowMiles.v;
+  const inWindow = inWindowTime && inWindowMiles;
+
+  const attemptThreshold = c.issue.safety ? rules.safetyAttempts.v : rules.generalAttempts.v;
+  const attemptsMet = attempts >= attemptThreshold;
+  const daysMet = dos.total > rules.daysOut.v;
+
+  const criteria = [
+    { label: `Repair attempts — ${c.issue.safety ? 'safety defect' : 'same non-safety defect'} (“${c.issue.label}”)`,
+      value: attempts, threshold: `≥ ${attemptThreshold}`, met: attemptsMet,
+      why: attemptsMet ? `${attempts} documented attempts meet the ${c.issue.safety?'safety':'general'} guideline${c.visits.some(v=>/COULD NOT DUPLICATE|NO FAULT FOUND/i.test(v.complaint+v.correction))?' (includes one CND visit — customer-reported)':''}.`
+                       : `${attempts} attempts documented; guideline is ${attemptThreshold}. One more documented attempt for the same defect changes this line.` },
+    { label: 'Cumulative days out of service (overlaps removed)',
+      value: dos.total, threshold: `> ${rules.daysOut.v}`, met: daysMet,
+      why: daysMet ? `${dos.total} days exceeds the ${rules.daysOut.v}-day guideline.`
+                   : `${dos.total} days; guideline is more than ${rules.daysOut.v}.` },
+    { label: `First report within presumption window (${rules.windowMonths.v} mo / ${rules.windowMiles.v.toLocaleString()} mi)`,
+      value: `${Math.round(monthsAtFirst)} mo · ${first.miles.toLocaleString()} mi`, threshold: 'both', met: inWindow, indet: false,
+      why: inWindow ? `First report at month ${Math.round(monthsAtFirst)} and ${first.miles.toLocaleString()} miles — inside the window.`
+                    : `First report ${inWindowTime?'':'after the '+rules.windowMonths.v+'-month mark'}${!inWindowTime&&!inWindowMiles?' and ':''}${inWindowMiles?'':'above '+rules.windowMiles.v.toLocaleString()+' miles'} — outside the Tanner window. Non-presumption path under § 1793.2(d) remains available.` }
+  ];
+
+  const rod = c.condition === 'used';
+  if(rod) criteria.push({
+    label: 'Used vehicle — manufacturer warranty issued at sale (Rodriguez v. FCA US LLC (Cal. 2024))',
+    value: c.warrantyAtSale, threshold: 'attorney', met: c.warrantyAtSale === 'yes', indet: c.warrantyAtSale === 'unknown',
+    why: c.warrantyAtSale === 'yes' ? 'Client reports a manufacturer warranty issued at sale — flagged for attorney confirmation.'
+       : c.warrantyAtSale === 'unknown' ? 'Unknown whether a manufacturer warranty issued at the used sale. Coverage question for counsel — the system does not decide this.'
+       : 'Client reports no manufacturer warranty at sale — coverage under Song-Beverly is an attorney determination post-Rodriguez.' });
+
+  let verdict, cls, why, swing;
+  const meritMet = attemptsMet || daysMet;
+
+  if(rod && c.warrantyAtSale !== 'yes'){
+    verdict='ATTORNEY DETERMINATION'; cls='mid';
+    why='Used-vehicle coverage question controls before any merits screen (Rodriguez). Merits shown for context only.';
+    swing='Whether a manufacturer warranty issued at the used sale. If yes, the merits screen below applies; if no, coverage itself is the question for counsel.';
+  } else if(inWindow && meritMet){
+    verdict='PRESUMPTION SUPPORTED'; cls='ok';
+    why=`Screening supports the § 1793.22 presumption: ${attemptsMet?`${attempts} attempts`:''}${attemptsMet&&daysMet?' and ':''}${daysMet?`${dos.total} days out of service`:''} inside the window. Attorney review required.`;
+    swing = attemptsMet && daysMet ? 'None on the merits screen — remaining exposure is documentary (see open items).'
+          : attemptsMet ? `Days out of service (${dos.total}) sits ${dos.total>rules.daysOut.v?'above':'below'} the ${rules.daysOut.v}-day guideline; the attempt count carries the screen.`
+          : `Attempt count (${attempts}) is below guideline; the days-out total carries the screen.`;
+  } else if(meritMet){
+    verdict='NON-PRESUMPTION PATH'; cls='mid';
+    why='Outside the Tanner window, but a reasonable-number argument under § 1793.2(d) is available if defects arose under the express warranty. Attorney judgment required.';
+    swing='Whether the documented repairs occurred within the express warranty period and support a “reasonable number of attempts” argument — counsel’s call, not the system’s.';
+  } else {
+    verdict='BELOW GUIDELINES — REVIEW'; cls='no';
+    const needA = attemptThreshold - attempts, needD = rules.daysOut.v + 1 - dos.total;
+    why=`Neither the attempt count (${attempts}/${attemptThreshold}) nor days out (${dos.total}/${rules.daysOut.v}+) meets the configured guidelines yet.`;
+    swing=`${needA>0?`One more documented attempt (${needA} needed)`:''}${needA>0&&needD>0?' or ':''}${needD>0?`${needD} more out-of-service days`:''} would change the screen. If the defect is ongoing, this case may qualify soon — a decline today is not a decline forever.`;
+  }
+
+  const openItems = docFlags(c).map(f=>f.text);
+  if(c.warrantyAtSale==='unknown') openItems.push('Confirm whether a manufacturer warranty issued at the used sale (purchase contract will show it).');
+
+  return { criteria, verdict, cls, why, swing, dos, attempts, windowEnd, openItems };
+}
+
+function routeTrack(c){
+  if(state.hypoFast) return { track:'FAST TRACK (HYPOTHETICAL)', why:`Demonstrating AB 1755 arithmetic as if ${c.manufacturer} had opted in. The real roster ships empty; the firm's attorneys maintain it.` };
+  return { track:'UNDETERMINED', why:`${c.manufacturer} is not on the configured opt-in roster — because the roster ships empty by design. Resolve via the firm-maintained table; routing is a lookup, not a judgment.` };
+}
+
+function deadlineMath(c, rules){
+  const r1 = addYears(c.warrantyExpiry, rules.ftYearsAfterWarr.v);
+  const r2 = addYears(c.delivery, rules.ftCapYears.v);
+  const ctrl = d(r1) <= d(r2) ? 1 : 2;
+  return { r1, r2, ctrl };
+}
+
+/* ============================================================
+   AUDIT
+   ============================================================ */
+function hashInputs(){
+  const s = JSON.stringify({ c: currentCase(), r: state.rules, h: state.hypoFast });
+  let h = 5381; for(let i=0;i<s.length;i++) h = ((h<<5)+h+s.charCodeAt(i))>>>0;
+  return h.toString(16).padStart(8,'0');
+}
+function audit(event){
+  const t = new Date().toISOString().replace('T',' ').slice(0,19);
+  state.audit.unshift(`<span class="t">${t}</span>  ${event}  <span class="t">rules ${ruleVersion()} · inputs</span> <span class="h">#${hashInputs()}</span>`);
+  document.getElementById('auditLog').innerHTML = state.audit.join('<br>');
+}
+
+/* ============================================================
+   REVIEW GATE
+   ============================================================ */
+function revokeReview(reason){
+  if(state.review.status === 'reviewed'){
+    state.review.status = 'revoked';
+    audit(`REVIEW REVOKED — ${reason}. Approval only covers the inputs it was given.`);
+  }
+  renderGate();
+}
+function renderGate(){
+  const el = document.getElementById('gateStatus');
+  const { status, initials } = state.review;
+  el.className = 'gate-status ' + (status==='reviewed'?'reviewed':status==='revoked'?'revoked':'none');
+  el.textContent = status==='reviewed' ? `Reviewed & saved — ${initials}` :
+                   status==='revoked' ? 'Review revoked — inputs changed' : 'Not reviewed';
+}
+
+/* ============================================================
+   RENDER — Stage 1: documents
+   ============================================================ */
+function renderTray(){
+  const c = currentCase();
+  document.getElementById('docTray').innerHTML = c.visits.map((v,i)=>
+    `<button class="doc-tab${i===state.activeDoc?' active':''}${state.extracted?' done':''}" data-doc="${i}">${v.ro}</button>`).join('');
+  document.querySelectorAll('.doc-tab').forEach(b=>b.addEventListener('click',()=>{
+    if(state.extracting) return;
+    state.activeDoc = +b.dataset.doc; renderTray(); renderFacsimile(state.extracted);
+  }));
+}
+function renderFacsimile(lit){
+  const c = currentCase(), v = c.visits[state.activeDoc];
+  const m = (id,txt)=>`<mark class="x${lit?' on':''}" data-f="${id}">${txt}</mark>`;
+  document.getElementById('facsimile').innerHTML = `
+    <div class="fx-head">
+      <div class="fx-dealer">${v.dealer}</div>
+      <div style="color:var(--ink-3)">SERVICE INVOICE — CUSTOMER COPY · ${m('ro',v.ro)}</div>
+    </div>
+    <div class="fx-row"><span class="fx-label">VEHICLE</span><span>${c.vehicle.year} ${c.vehicle.make.toUpperCase()} ${c.vehicle.model.toUpperCase()}</span></div>
+    <div class="fx-row"><span class="fx-label">VIN</span><span>${c.vehicle.vin}</span></div>
+    <div class="fx-row"><span class="fx-label">DATE IN</span><span>${m('dateIn',v.dateIn)}</span></div>
+    <div class="fx-row"><span class="fx-label">DATE OUT</span><span>${m('dateOut',v.dateOut)}</span></div>
+    <div class="fx-row"><span class="fx-label">INVOICE DATE</span><span>${m('invoice',v.invoice)}</span></div>
+    <div class="fx-row"><span class="fx-label">MILEAGE IN</span><span>${m('miles',v.miles.toLocaleString())}</span></div>
+    <div class="fx-block"><span class="fx-label">CUSTOMER STATES</span>${m('complaint',v.complaint)}</div>
+    <div class="fx-block"><span class="fx-label">CAUSE / CORRECTION</span>${m('correction',v.correction)}</div>
+    <div class="fx-block" style="color:var(--ink-3);border-top:1px dashed var(--rule);padding-top:8px;margin-top:14px">FICTIONAL DOCUMENT — DEMO FACSIMILE. Production ingests real scanned PDFs server-side.</div>`;
+}
+function ledgerRow(field, value, conf, flag){
+  const body = document.getElementById('ledgerBody');
+  const row = document.createElement('div');
+  row.className = 'lrow' + (flag ? ' flagrow' : '');
+  row.innerHTML = flag
+    ? `<span class="f">FLAG</span><span class="v">${value}</span><span class="c"></span>`
+    : `<span class="f">${field}</span><span class="v">${value}</span><span class="c${conf<90?' low':''}">${conf}%</span>`;
+  body.appendChild(row);
+  body.scrollTop = body.scrollHeight;
+}
+const sleep = ms => new Promise(r=>setTimeout(r, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : ms));
+
+async function runExtraction(){
+  if(state.extracting || state.extracted) return;
+  state.extracting = true;
+  document.getElementById('btnExtract').disabled = true;
+  const c = currentCase(), status = document.getElementById('exStatus');
+  document.getElementById('ledgerBody').innerHTML = '';
+  audit('EXTRACTION STARTED — ' + c.visits.length + ' documents');
+
+  for(let i=0;i<c.visits.length;i++){
+    state.activeDoc = i; renderTray(); renderFacsimile(false);
+    const v = c.visits[i];
+    status.textContent = `Reading ${v.ro} (${i+1}/${c.visits.length})…`;
+    await sleep(350);
+    const steps = [
+      ['ro', 'RO number', v.ro, 99],
+      ['dateIn', 'Date in', v.dateIn, v.conf.dates],
+      ['dateOut', 'Date out', v.dateOut, v.conf.dates],
+      ['invoice', 'Invoice date', v.invoice, v.conf.dates],
+      ['miles', 'Mileage in', v.miles.toLocaleString() + ' mi', v.conf.miles],
+      ['complaint', 'Customer states', v.complaint, v.conf.complaint],
+      ['correction', 'Correction', v.correction, v.conf.complaint]
+    ];
+    for(const [id, field, val, conf] of steps){
+      const mk = document.querySelector(`#facsimile mark[data-f="${id}"]`);
+      if(mk) mk.classList.add('on');
+      ledgerRow(field, val, conf, false);
+      await sleep(300);
+    }
+    docFlags(c).filter(f=>f.visit===i).forEach(f=>ledgerRow('', f.text, 0, true));
+    document.querySelectorAll('.doc-tab')[i].classList.add('done');
+    await sleep(250);
+  }
+  docFlags(c).filter(f=>f.visit===-1).forEach(f=>ledgerRow('', f.text, 0, true));
+
+  state.extracted = true; state.extracting = false;
+  const flags = docFlags(c).length;
+  const sum = document.getElementById('ledgerSum');
+  sum.textContent = `${c.visits.length} documents → ${c.visits.length} repair visits · ${flags} flag${flags!==1?'s':''} queued for human verification`;
+  sum.classList.add('show');
+  status.textContent = 'Extraction complete — verify flagged fields';
+  document.getElementById('btnExtract').disabled = false;
+  audit(`EXTRACTION COMPLETE — ${c.visits.length} visits, ${flags} flags`);
+  renderDownstream();
+}
+
+/* ============================================================
+   RENDER — Stage 2: case record
+   ============================================================ */
+function renderRecord(){
+  const c = currentCase();
+  const g = document.getElementById('recGrid');
+  g.innerHTML = `
+    <div class="field"><label>Vehicle</label><div class="val">${c.vehicle.year} ${c.vehicle.make} ${c.vehicle.model}</div></div>
+    <div class="field"><label>VIN</label><div class="val">${c.vehicle.vin}<button class="copybtn" id="copyVin">copy</button></div></div>
+    <div class="field"><label>Delivery date</label><div class="val">${fmt(c.delivery)} · ${c.deliveryMiles.toLocaleString()} mi</div></div>
+    <div class="field"><label>Warranty expiry (basic)</label><div class="val">${fmt(c.warrantyExpiry)}</div></div>
+    <div class="field"><label>Reported defect</label><div class="val">${c.issue.label}${c.issue.safety?' · SAFETY':''}</div></div>
+    <div class="field"><label>Manufacturer</label>
+      <select id="fMfr">${['General Motors','Kia','BMW','Ford','Tesla','Other'].map(m=>`<option${m===c.manufacturer?' selected':''}>${m}</option>`).join('')}</select></div>
+    <div class="field"><label>Condition at sale</label>
+      <select id="fCond"><option value="new"${c.condition==='new'?' selected':''}>New</option><option value="used"${c.condition==='used'?' selected':''}>Used</option></select></div>
+    <div class="field" id="warrWrap" style="${c.condition==='used'?'':'display:none'}"><label>Mfr warranty issued at sale?</label>
+      <select id="fWarr"><option value="yes"${c.warrantyAtSale==='yes'?' selected':''}>Yes</option><option value="no"${c.warrantyAtSale==='no'?' selected':''}>No</option><option value="unknown"${c.warrantyAtSale==='unknown'?' selected':''}>Unknown</option></select></div>`;
+  document.getElementById('copyVin').addEventListener('click', e=>{
+    navigator.clipboard?.writeText(c.vehicle.vin);
+    e.target.textContent='copied'; setTimeout(()=>e.target.textContent='copy',1200);
+  });
+  const onEdit = (field)=>{ revokeReview('case data edited ('+field+')'); audit('CASE DATA EDITED — '+field); renderDownstream(); };
+  document.getElementById('fMfr').addEventListener('change', e=>{ c.manufacturer=e.target.value; onEdit('manufacturer'); });
+  document.getElementById('fCond').addEventListener('change', e=>{ c.condition=e.target.value; renderRecord(); onEdit('condition'); });
+  const fw = document.getElementById('fWarr');
+  if(fw) fw.addEventListener('change', e=>{ c.warrantyAtSale=e.target.value; onEdit('warranty at sale'); });
+}
+
+/* ============================================================
+   RENDER — Stage 3: rules
+   ============================================================ */
+function renderRules(){
+  const g = document.getElementById('ruleGrid');
+  g.innerHTML = Object.entries(state.rules).map(([k,r])=>`
+    <div class="rule-item"><label for="rule_${k}">${r.label}</label>
+      <input type="number" id="rule_${k}" value="${r.v}" min="0">
+      <span class="cite">${r.cite}</span></div>`).join('');
+  Object.keys(state.rules).forEach(k=>{
+    document.getElementById('rule_'+k).addEventListener('change', e=>{
+      const nv = Number(e.target.value);
+      if(!Number.isFinite(nv) || nv < 0){ e.target.value = state.rules[k].v; return; }
+      state.rules[k].v = nv; state.ruleEdits++;
+      document.getElementById('verChip').textContent = 'rules ' + ruleVersion();
+      revokeReview('screening rule edited');
+      audit(`RULE EDITED — ${state.rules[k].label} → ${nv}`);
+      renderDownstream();
+    });
+  });
+}
+
+/* ============================================================
+   RENDER — Stages 4–7 (everything downstream of inputs)
+   ============================================================ */
+function renderDownstream(){
+  const c = currentCase(), rules = state.rules;
+  const ev = evaluateCase(c, rules);
+
+  /* verdict + criteria */
+  const badge = document.getElementById('vBadge');
+  badge.className = 'verdict-badge ' + ev.cls; badge.textContent = ev.verdict;
+  document.getElementById('vWhy').textContent = ev.why;
+  document.getElementById('critLedger').innerHTML = ev.criteria.map(cr=>`
+    <div class="crow">
+      <span class="mark ${cr.indet?'q':cr.met?'y':'n'}">${cr.indet?'?':cr.met?'✓':'✗'}</span>
+      <span>${cr.label}<div class="why">${cr.why}</div></span>
+      <span class="num"><b>${cr.value}</b><br>${cr.threshold}</span>
+    </div>`).join('');
+
+  /* timeline */
+  const t0 = d(c.delivery).getTime(), t1 = Date.now(), span = t1 - t0;
+  const track = document.getElementById('tlTrack');
+  const wEnd = Math.min(d(ev.windowEnd).getTime(), t1);
+  track.innerHTML = c.visits.map(v=>{
+    const l = (d(v.dateIn).getTime()-t0)/span*100, w = Math.max((d(v.dateOut)-d(v.dateIn))/span*100, .6);
+    return `<div class="tl-bar" style="left:${l}%;width:${w}%" title="${v.ro}: ${fmt(v.dateIn)} – ${fmt(v.dateOut)}"><span class="tip">${v.ro.replace('RO ','')}</span></div>`;
+  }).join('') + `<div class="tl-window" style="left:${(wEnd-t0)/span*100}%"><span class="wl">${rules.windowMonths.v} mo</span></div>`;
+  document.getElementById('tlStart').textContent = fmt(c.delivery) + ' (delivery)';
+  document.getElementById('tlEnd').textContent = 'today';
+  document.getElementById('daysMath').innerHTML =
+    `days out = ${c.visits.map(v=>dayDiff(v.dateIn,v.dateOut)).join(' + ')} = ${ev.dos.naive}` +
+    (ev.dos.overlap>0 ? ` − <b>${ev.dos.overlap} overlapping</b> = <b>${ev.dos.total}</b> (ranges merged so no day counts twice)` : ` = <b>${ev.dos.total}</b> (no overlaps detected)`);
+
+  /* procedure */
+  const rt = routeTrack(c);
+  document.getElementById('trackPill').textContent = rt.track;
+  document.getElementById('trackWhy').textContent = rt.why;
+  const dm = document.getElementById('dlMath');
+  if(state.hypoFast){
+    const dl = deadlineMath(c, rules);
+    dm.innerHTML = `<strong style="font-size:12.5px;letter-spacing:.04em">EFFECTIVE LIMITATIONS DATE — earlier of two attorney-configured rules (arithmetic, not an opinion)</strong>
+      <div class="row${dl.ctrl===1?' ctrl':''}"><span>Rule 1 · warranty expiry + ${rules.ftYearsAfterWarr.v} yr</span><span>${fmt(dl.r1)}${dl.ctrl===1?' ← controls':''}</span></div>
+      <div class="row${dl.ctrl===2?' ctrl':''}"><span>Rule 2 · delivery + ${rules.ftCapYears.v} yr cap</span><span>${fmt(dl.r2)}${dl.ctrl===2?' ← controls':''}</span></div>`;
+  } else {
+    dm.innerHTML = `<span style="color:var(--ink-2)">Deadline arithmetic runs once the track resolves. Toggle the hypothetical opt-in above (Stage 03) to see the fast-track calculation on attorney-supplied intervals.</span>`;
+  }
+  document.getElementById('rodBox').innerHTML = c.condition==='used'
+    ? `<div class="rules-note" style="margin-top:12px"><strong>Post-<em>Rodriguez</em> screening:</strong> vehicle sold used. The intake asks one added question — was a manufacturer warranty issued at sale (currently: <span style="font-family:var(--mono)">${c.warrantyAtSale}</span>) — and flags coverage for attorney determination. The system does not decide it.</div>` : '';
+  document.getElementById('verifyLinks').innerHTML = `
+    <a href="https://www.nhtsa.gov/recalls" target="_blank" rel="noopener">NHTSA recalls ↗</a>
+    <a href="https://www.nhtsa.gov/report-a-safety-problem" target="_blank" rel="noopener">NHTSA complaints ↗</a>
+    <a href="https://www.bar.ca.gov/" target="_blank" rel="noopener">CA Bureau of Automotive Repair ↗</a>`;
+
+  /* checklist + request draft */
+  renderChecklist(ev);
+
+  /* summary swing + open items */
+  document.getElementById('swingBox').innerHTML = `<b>Swing factor</b> — the single unknown that would change the outcome: ${ev.swing}`;
+  document.getElementById('openItems').innerHTML = ev.openItems.length
+    ? `<strong>Open items carried to counsel:</strong><ul>${ev.openItems.map(o=>`<li>${o}</li>`).join('')}</ul>`
+    : `<strong>Open items:</strong> none flagged by extraction.`;
+}
+
+function renderChecklist(ev){
+  const c = currentCase();
+  const key = state.caseId;
+  if(!state.checklist[key]){
+    state.checklist[key] = [
+      { item:'Purchase / lease contract', have:false },
+      { item:'Warranty booklet', have:false },
+      ...c.visits.map(v=>({ item:`Repair order ${v.ro.replace('RO ','#')} (${fmt(v.dateIn)})`, have:true })),
+      { item:'Current registration', have:false },
+      ...(c.condition==='used' ? [{ item:'Title / CPO paperwork (used sale)', have:false }] : [])
+    ];
+  }
+  const list = state.checklist[key];
+  document.getElementById('ckList').innerHTML = list.map((it,i)=>`
+    <label class="ckrow"><input type="checkbox" data-ck="${i}" ${it.have?'checked':''}> ${it.item}
+      <span class="st ${it.have?'have':'miss'}">${it.have?'RECEIVED':'MISSING'}</span></label>`).join('');
+  document.querySelectorAll('[data-ck]').forEach(cb=>cb.addEventListener('change', e=>{
+    list[+e.target.dataset.ck].have = e.target.checked;
+    revokeReview('document checklist changed');
+    audit('CHECKLIST — ' + list[+e.target.dataset.ck].item + (e.target.checked?' received':' marked missing'));
+    renderChecklist(ev);
+  }));
+  const missing = list.filter(i=>!i.have).map(i=>i.item);
+  document.getElementById('reqText').value = missing.length
+    ? `Hi — to finish evaluating your ${c.vehicle.year} ${c.vehicle.make} ${c.vehicle.model}, we need ${missing.length===1?'one more document':'a few more documents'}:\n\n${missing.map(m=>'• '+m).join('\n')}\n\nPhotos from your phone are fine. Reply to this message or bring them to your consultation. This request is only about paperwork — it says nothing about whether your case qualifies.`
+    : 'All checklist documents received — no request needed.';
+}
+
+/* ============================================================
+   SUMMARY DRAFT (mock generator — offline by default)
+   ============================================================ */
+function generateDraft(){
+  const c = currentCase(), ev = evaluateCase(c, state.rules);
+  const v1 = c.visits[0], vn = c.visits[c.visits.length-1];
+  return `INTAKE SUMMARY — ${c.vehicle.year} ${c.vehicle.make} ${c.vehicle.model} (VIN ${c.vehicle.vin})
+
+Client reports: ${c.issue.label}${c.issue.safety?' (safety-related)':''}. Vehicle delivered ${fmt(c.delivery)} at ${c.deliveryMiles.toLocaleString()} miles${c.condition==='used'?' (sold used)':''}.
+
+Repair history: ${ev.attempts} documented visits between ${fmt(v1.dateIn)} and ${fmt(vn.dateOut)}; approximately ${ev.dos.total} days out of service (overlapping days de-duplicated${ev.dos.overlap?`; ${ev.dos.overlap} removed`:''}).
+
+Screening posture: ${ev.verdict} — ${ev.why}
+
+Swing factor: ${ev.swing}
+
+Open items: ${ev.openItems.length? '\n' + ev.openItems.map(o=>'  – '+o).join('\n') : 'none flagged.'}
+
+Prepared by intake system, rules ${ruleVersion()}, inputs #${hashInputs()}. This is a screening summary for attorney review — not a coverage or merits decision.`;
+}
+
+/* ============================================================
+   WIRING
+   ============================================================ */
+function resetExtraction(){
+  state.extracted = false; state.extracting = false; state.activeDoc = 0;
+  document.getElementById('ledgerBody').innerHTML =
+    '<div class="lrow"><span class="f"></span><span class="v" style="color:var(--ink-3);font-family:var(--sans)">Ledger empty — run extraction to read the queued repair orders.</span><span class="c"></span></div>';
+  document.getElementById('ledgerSum').classList.remove('show');
+  document.getElementById('exStatus').textContent = currentCase().visits.length + ' documents queued';
+  document.getElementById('btnExtract').disabled = false;
+  renderTray(); renderFacsimile(false);
+}
+function loadCase(id){
+  state.caseId = id;
+  state.review = { status:'none', initials:'' };
+  document.getElementById('draftText').value = '';
+  document.querySelectorAll('.chip').forEach(ch=>ch.setAttribute('aria-pressed', ch.dataset.case===id));
+  audit('CASE LOADED — ' + CASES[id].label);
+  resetExtraction(); renderRecord(); renderGate(); renderDownstream();
+}
+
+document.querySelectorAll('.chip').forEach(ch=>ch.addEventListener('click', ()=>{ if(!state.extracting) loadCase(ch.dataset.case); }));
+document.getElementById('btnExtract').addEventListener('click', runExtraction);
+document.getElementById('btnReset').addEventListener('click', ()=>{ if(!state.extracting){ resetExtraction(); audit('EXTRACTION RESET'); }});
+document.getElementById('hypoFast').addEventListener('change', e=>{
+  state.hypoFast = e.target.checked;
+  audit('HYPOTHETICAL FAST-TRACK ' + (state.hypoFast?'ENABLED':'DISABLED'));
+  revokeReview('procedural assumption changed'); renderDownstream();
+});
+document.getElementById('btnGen').addEventListener('click', ()=>{
+  document.getElementById('draftText').value = generateDraft();
+  state.review.status = 'none'; renderGate();
+  audit('SUMMARY DRAFT GENERATED (mock LLM — offline)');
+});
+document.getElementById('draftText').addEventListener('input', ()=>{ if(state.review.status==='reviewed') revokeReview('draft edited after review'); });
+document.getElementById('btnReview').addEventListener('click', ()=>{
+  const ini = document.getElementById('initials').value.trim().toUpperCase();
+  const txt = document.getElementById('draftText').value.trim();
+  if(!txt){ audit('REVIEW BLOCKED — no draft to review'); return; }
+  if(!ini){ document.getElementById('initials').focus(); return; }
+  state.review = { status:'reviewed', initials: ini };
+  renderGate(); audit('SUMMARY MARKED REVIEWED — ' + ini);
+});
+document.getElementById('btnCopyReq').addEventListener('click', e=>{
+  navigator.clipboard?.writeText(document.getElementById('reqText').value);
+  e.target.textContent = 'Copied'; setTimeout(()=>e.target.textContent='Copy draft', 1200);
+});
+
+/* boot */
+audit('SESSION START — demo build, fictional data, rules ' + ruleVersion());
+renderRules(); loadCase('A');
+</script>
+</body>
+</html>
