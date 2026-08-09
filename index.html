@@ -3,10 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lemon Law Intake Qualifier — Demo</title>
-  <!-- Fonts load when online; system fallbacks keep the demo presentable offline -->
+  <title>Lemon Law Intake Qualifier — v2 Demo</title>
+  <!-- Provenance typography: Libre Franklin (interface), Source Serif 4 (attorney
+       prose), IBM Plex Mono (machine-read values). Fonts load when online;
+       system fallbacks in the CSS stacks keep the demo presentable offline. -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -34,6 +37,17 @@
   </div>
 
   <div class="topline" id="topline" aria-label="Case signals at a glance"></div>
+
+  <!-- STAGE 01 — repair-order extraction (document-first intake) -->
+  <div class="fullwidth-wrap">
+    <section class="panel" id="extraction-panel" aria-label="Repair order extraction">
+      <div class="panel-head">
+        <span class="panel-eyebrow">Stage 01 &middot; machine-read &mdash; verify before use</span>
+        <h2 class="panel-title">Repair orders &mdash; extraction</h2>
+      </div>
+      <div class="panel-body" id="extraction-body"></div>
+    </section>
+  </div>
 
   <main class="layout">
 
@@ -126,10 +140,13 @@
   </div>
 
   <footer class="app-footer">
-    Demo &mdash; preliminary screening only. Attorney review required. Rules are illustrative; verify current statute. Built by Andre C as a technical demonstration; all names, vehicles, and records are fictional.
+    <p class="ip-notice">&copy; Andre Ciasca. Demonstration only &mdash; all rights reserved. Not licensed for use, reproduction, or deployment. Production licensing: andre@ciasca.com.</p>
+    <p>Demo &mdash; preliminary screening only. Attorney review required. Rules are illustrative; verify current statute. Built by Andre C as a technical demonstration; all names, vehicles, dealers, VINs, and records are fictional. Nothing here is legal advice.</p>
+    <p class="footer-notes">Thresholds reference the Song-Beverly Consumer Warranty Act, Civ. Code &sect; 1793.2 et seq., and the Tanner Consumer Protection Act presumption, Civ. Code &sect; 1793.22, as illustrative starting points requiring attorney validation. A non-presumption path under &sect; 1793.2(d) remains available outside the Tanner window. <em>Rodriguez v. FCA US LLC</em> (Cal. 2024) screening asks a question; it does not decide coverage.</p>
   </footer>
 
   <script src="js/rules.js"></script>
+  <script src="js/engine.js"></script>
   <script src="js/sampleCases.js"></script>
   <script src="js/closedCases.js"></script>
   <script src="js/llm.js"></script>

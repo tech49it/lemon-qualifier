@@ -32,6 +32,7 @@
     reviewer: Workflow.REVIEWERS[0],
     review: { originalDraft: '', editedBeforeApproval: false, editing: false, editBuffer: '', pendingDecision: null, noteBuffer: '', decidedBy: null, decidedAt: null, note: '', draftView: 'approved' },
     booking: { slot: null, confirmedAt: null, offered: false },
+    extraction: { extracted: false, extracting: false, activeDoc: 0 },
     audit: Workflow.createAuditLog()
   };
 
@@ -53,6 +54,15 @@
   function nowStamp() {
     return new Date().toLocaleString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
   }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function (ch) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch];
+    });
+  }
+  function reducedMotion() {
+    return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, reducedMotion() ? 0 : ms); }); }
 
   /* --------------------------- case loading ------------------------------ */
 
@@ -69,6 +79,7 @@
     state.caseState = 'DRAFT';
     state.review = { originalDraft: '', editedBeforeApproval: false, editing: false, editBuffer: '', pendingDecision: null, noteBuffer: '', decidedBy: null, decidedAt: null, note: '', draftView: 'approved' };
     state.booking = { slot: null, confirmedAt: null, offered: false };
+    state.extraction = { extracted: false, extracting: false, activeDoc: 0 };
     buildChecklist();
     renderAll();
   }
@@ -107,6 +118,7 @@
 
   function renderAll() {
     renderChips();
+    renderExtraction();
     renderForm();
     renderRulesPanel();
     renderOutputs();
@@ -171,6 +183,7 @@
     state.docRequest.reviewed = false; /* the request draft was reviewed against the old inputs */
     revokeReviewIfNeeded('case inputs edited'); /* approval only covers the inputs it was given */
     if (rebuildChecklist) { buildChecklist(); }
+    renderExtraction();                /* keep the extraction ledger in step with edited repair data */
     renderComputedStrip();
     renderAssessment();
     renderValuePanel();
@@ -508,6 +521,206 @@
     renderReviewPanel();
     renderBookingPanel();
     $('#rules-toggle').textContent = 'Hide rules (v' + state.config.version + ')';
+  }
+
+  /* ===================================================================
+   * STAGE 01 — repair-order extraction (rendering + animation only)
+   * Reads the RO facsimile fields on state.caseData.repairs and the pure
+   * engine flags (Rules.docFlags / Rules.daysOutOfService). No screening
+   * decision is made here — the ledger surfaces what a human must verify.
+   * =================================================================== */
+
+  function repairVisits() {
+    return (state.caseData.repairs || []).filter(function (r) { return r.samePrimaryDefect !== false; });
+  }
+
+  /* [facsimile-mark id, ledger field label, display value, confidence] */
+  function extractionSteps(v) {
+    var miles = (v.mileage === '' || v.mileage == null) ? '—' : Number(v.mileage).toLocaleString() + ' mi';
+    var conf = v.conf || {};
+    return [
+      ['ro', 'RO number', v.ro || '—', conf.dates || 99],
+      ['dateIn', 'Date in', v.dateIn || '—', conf.dates || 90],
+      ['dateOut', 'Date out', v.dateOut || '—', conf.dates || 90],
+      ['invoice', 'Invoice date', v.invoice || '—', conf.dates || 90],
+      ['miles', 'Mileage in', miles, conf.miles || 90],
+      ['complaint', 'Customer states', v.reported || '—', conf.complaint || 90],
+      ['correction', 'Correction', v.done || '—', conf.complaint || 90]
+    ];
+  }
+
+  function renderDocTray() {
+    var tray = $('#docTray');
+    if (!tray) return;
+    var vis = repairVisits(), ex = state.extraction;
+    tray.innerHTML = vis.map(function (v, i) {
+      return '<button class="doc-tab' + (i === ex.activeDoc ? ' active' : '') + (ex.extracted ? ' done' : '') +
+        '" data-doc="' + i + '">' + esc(v.ro || ('Visit ' + (i + 1))) + '</button>';
+    }).join('');
+    Array.prototype.forEach.call(tray.querySelectorAll('.doc-tab'), function (b) {
+      b.addEventListener('click', function () {
+        if (state.extraction.extracting) return;
+        state.extraction.activeDoc = +b.getAttribute('data-doc');
+        renderDocTray();
+        renderFacsimile(state.extraction.extracted);
+      });
+    });
+  }
+
+  function renderFacsimile(lit) {
+    var node = $('#facsimile');
+    if (!node) return;
+    var c = state.caseData, vis = repairVisits(), v = vis[state.extraction.activeDoc];
+    if (!v) { node.innerHTML = '<div class="fx-empty">No same-defect repair visits on this case.</div>'; return; }
+    function mk(id, txt) { return '<mark class="x' + (lit ? ' on' : '') + '" data-f="' + id + '">' + esc(txt) + '</mark>'; }
+    var veh = [c.vehicle.year, c.vehicle.make, c.vehicle.model].filter(Boolean).join(' ').toUpperCase();
+    node.innerHTML =
+      '<div class="fx-head">' +
+        '<div class="fx-dealer">' + esc((v.shop || '').toUpperCase()) + '</div>' +
+        '<div class="fx-sub">SERVICE INVOICE — CUSTOMER COPY · ' + mk('ro', v.ro || '—') + '</div>' +
+      '</div>' +
+      '<div class="fx-row"><span class="fx-label">VEHICLE</span><span>' + esc(veh || '—') + '</span></div>' +
+      '<div class="fx-row"><span class="fx-label">VIN</span><span>' + esc(c.vehicle.vin || '—') + '</span></div>' +
+      '<div class="fx-row"><span class="fx-label">DATE IN</span><span>' + mk('dateIn', v.dateIn || '—') + '</span></div>' +
+      '<div class="fx-row"><span class="fx-label">DATE OUT</span><span>' + mk('dateOut', v.dateOut || '—') + '</span></div>' +
+      '<div class="fx-row"><span class="fx-label">INVOICE DATE</span><span>' + mk('invoice', v.invoice || '—') + '</span></div>' +
+      '<div class="fx-row"><span class="fx-label">MILEAGE IN</span><span>' + mk('miles', v.mileage ? Number(v.mileage).toLocaleString() : '—') + '</span></div>' +
+      '<div class="fx-block"><span class="fx-label">CUSTOMER STATES</span>' + mk('complaint', v.reported || '—') + '</div>' +
+      '<div class="fx-block"><span class="fx-label">CAUSE / CORRECTION</span>' + mk('correction', v.done || '—') + '</div>' +
+      '<div class="fx-note">FICTIONAL DOCUMENT — DEMO FACSIMILE. Production ingests real scanned PDFs server-side.</div>';
+  }
+
+  function ledgerRow(field, value, conf, flag) {
+    var body = $('#ledgerBody');
+    if (!body) return;
+    var row = document.createElement('div');
+    row.className = 'lrow' + (flag ? ' flagrow' : '');
+    row.innerHTML = flag
+      ? '<span class="f">FLAG</span><span class="v">' + esc(value) + '</span><span class="c"></span>'
+      : '<span class="f">' + esc(field) + '</span><span class="v">' + esc(value) + '</span><span class="c' + (conf < 90 ? ' low' : '') + '">' + conf + '%</span>';
+    body.appendChild(row);
+    body.scrollTop = body.scrollHeight;
+  }
+
+  function renderLedgerSummary(nvisits, nflags) {
+    var sum = $('#ledgerSum');
+    if (!sum) return;
+    var dos = Rules.daysOutOfService(repairVisits());
+    var math = dos.overlap > 0
+      ? 'Days out of service: ' + dos.naive + ' − ' + dos.overlap + ' overlapping = ' + dos.total + ' (ranges merged so no day counts twice)'
+      : 'Days out of service: ' + dos.naive + ' = ' + dos.total + ' (no overlaps detected)';
+    sum.innerHTML =
+      '<div>' + nvisits + ' document' + (nvisits !== 1 ? 's' : '') + ' → ' + nvisits + ' repair visit' + (nvisits !== 1 ? 's' : '') +
+        ' · ' + nflags + ' flag' + (nflags !== 1 ? 's' : '') + ' queued for human verification</div>' +
+      '<div class="ledger-math">' + esc(math) + '</div>';
+    sum.classList.add('show');
+  }
+
+  /* Populate the ledger fully with no animation — used on re-render when a
+   * case has already been extracted (e.g. after a downstream re-render). */
+  function populateLedgerStatic() {
+    var body = $('#ledgerBody');
+    if (!body) return;
+    body.innerHTML = '';
+    var vis = repairVisits();
+    var flags = Rules.docFlags(state.caseData);
+    vis.forEach(function (v, i) {
+      extractionSteps(v).forEach(function (s) { ledgerRow(s[1], s[2], s[3], false); });
+      flags.filter(function (f) { return f.visit === i; }).forEach(function (f) { ledgerRow('', f.text, 0, true); });
+    });
+    flags.filter(function (f) { return f.visit === -1; }).forEach(function (f) { ledgerRow('', f.text, 0, true); });
+    renderLedgerSummary(vis.length, flags.length);
+  }
+
+  function runExtraction() {
+    var ex = state.extraction;
+    if (ex.extracting || ex.extracted) return;
+    ex.extracting = true;
+    var btn = $('#btnExtract'); if (btn) btn.disabled = true;
+    var status = $('#exStatus');
+    if ($('#ledgerBody')) $('#ledgerBody').innerHTML = '';
+    if ($('#ledgerSum')) $('#ledgerSum').classList.remove('show');
+    var vis = repairVisits();
+    var flags = Rules.docFlags(state.caseData);
+    logEvent('system', 'extraction started', vis.length + ' document(s) · ' + (state.caseData.contact.name || 'case'));
+
+    var chain = Promise.resolve();
+    vis.forEach(function (v, i) {
+      chain = chain.then(function () {
+        ex.activeDoc = i; renderDocTray(); renderFacsimile(false);
+        if (status) status.textContent = 'Reading ' + (v.ro || ('visit ' + (i + 1))) + ' (' + (i + 1) + '/' + vis.length + ')…';
+        return sleep(320);
+      });
+      extractionSteps(v).forEach(function (s) {
+        chain = chain.then(function () {
+          var mk = document.querySelector('#facsimile mark[data-f="' + s[0] + '"]');
+          if (mk) mk.classList.add('on');
+          ledgerRow(s[1], s[2], s[3], false);
+          return sleep(280);
+        });
+      });
+      chain = chain.then(function () {
+        flags.filter(function (f) { return f.visit === i; }).forEach(function (f) { ledgerRow('', f.text, 0, true); });
+        var tabs = $('#docTray').querySelectorAll('.doc-tab');
+        if (tabs[i]) tabs[i].classList.add('done');
+        return sleep(240);
+      });
+    });
+    chain.then(function () {
+      flags.filter(function (f) { return f.visit === -1; }).forEach(function (f) { ledgerRow('', f.text, 0, true); });
+      ex.extracted = true; ex.extracting = false;
+      renderLedgerSummary(vis.length, flags.length);
+      if (status) status.textContent = 'Extraction complete — verify flagged fields';
+      if (btn) btn.disabled = false;
+      renderDocTray();
+      logEvent('system', 'extraction complete', vis.length + ' visit(s), ' + flags.length + ' flag(s) queued for verification');
+      renderAssessment(); /* days-out math in the assessment reflects the read */
+    });
+  }
+
+  function renderExtraction() {
+    var host = $('#extraction-body');
+    if (!host) return;
+    if (state.extraction.extracting) return; /* never wipe the ledger mid-animation */
+    var vis = repairVisits();
+    host.innerHTML =
+      '<div class="docgrid">' +
+        '<div class="doc-col">' +
+          '<div class="tray" id="docTray"></div>' +
+          '<div class="facsimile" id="facsimile" aria-live="polite"></div>' +
+          '<div class="extract-bar">' +
+            '<button class="btn-extract" id="btnExtract">Extract repair data</button>' +
+            '<button class="btn-reset" id="btnReset">Reset</button>' +
+            '<span class="extract-status" id="exStatus"></span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="ledger-col">' +
+          '<div class="ledger">' +
+            '<div class="ledger-head">Extraction ledger — field · value · confidence</div>' +
+            '<div class="ledger-body" id="ledgerBody"></div>' +
+            '<div class="ledger-sum" id="ledgerSum"></div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<p class="extract-note"><strong>Production note:</strong> the deployed pipeline ingests real scanned PDFs and phone photos server-side (OCR + LLM extraction behind the firm’s own infrastructure). This demo renders embedded facsimiles so it runs with zero network and exposes no backend logic. Low-confidence fields are queued for human verification, never silently accepted.</p>';
+
+    renderDocTray();
+    renderFacsimile(state.extraction.extracted);
+    var status = $('#exStatus');
+    if (state.extraction.extracted) {
+      populateLedgerStatic();
+      if (status) status.textContent = 'Extraction complete — verify flagged fields';
+    } else {
+      $('#ledgerBody').innerHTML = '<div class="lrow placeholder"><span class="f"></span><span class="v">Ledger empty — run extraction to read the queued repair orders.</span><span class="c"></span></div>';
+      if (status) status.textContent = vis.length + ' document' + (vis.length !== 1 ? 's' : '') + ' queued';
+    }
+    $('#btnExtract').addEventListener('click', runExtraction);
+    $('#btnReset').addEventListener('click', function () {
+      if (state.extraction.extracting) return;
+      state.extraction = { extracted: false, extracting: false, activeDoc: 0 };
+      renderExtraction();
+      logEvent('system', 'extraction reset', (state.caseData && state.caseData.contact.name) || 'case');
+    });
   }
 
   /* ------ outputs ------ */
@@ -1182,7 +1395,15 @@
 
   function logEvent(actor, action, detail) {
     if (!state.audit) return;
-    state.audit.append(actor, action, detail);
+    /* Every logged event carries the rule version in force and a hash of the
+     * case inputs — the visible promise of the audit trail. */
+    var stamped = detail || '';
+    if (state.caseData && Rules.inputsHash) {
+      var c = state.caseData;
+      var hash = Rules.inputsHash({ v: c.vehicle, w: c.warranty, p: c.problem, r: c.repairs });
+      stamped += (stamped ? ' · ' : '') + 'rules v' + state.config.version + ' · inputs #' + hash;
+    }
+    state.audit.append(actor, action, stamped);
     renderAuditPanel();
   }
 
