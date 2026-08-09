@@ -67,13 +67,12 @@ Authored so every v1.4 figure holds — see the exposure/day-count note below.
    **permanent** repo-wide regression assertion (`test/engine.test.js`), which scans
    `index.html`, `README.md`, `CLAUDE.md`, `DEPLOY.md`, and all `js/`.
 
-4. **Exposure figure: $55,725, not $56,725.** The brief's prose says Rivera nets
-   $56,725; the actual v1.4 engine computes **$55,725** — offset =
+4. **Exposure figure: $55,725 (confirmed canonical).** The v1.4 engine computes
+   Rivera's net exposure as **$55,725** — offset =
    `round(58900 × (6480 − 12) / 120000) = 3175`, net = `58900 − 3175 = 55725` — and
-   the retained v1.4 test asserts exactly this. Behavior parity with the code (not
-   the prose) is the acceptance bar, so **$55,725 was preserved**. Please confirm
-   which is canonical; if $56,725 is intended, the offset denominator or first-repair
-   mileage needs to change (a rules/data decision, not a code fix).
+   the retained v1.4 test asserts exactly this. An earlier draft of the brief carried
+   a different figure as a typo; per decision, the engine figure is canonical and the
+   prose was corrected to match. No engine, denominator, or mileage change.
 
 5. **Rivera dates adjusted to create a cross-dealer overlap.** To exercise the
    OVERLAP flag while holding the documented figures, Rivera's third visit was moved
@@ -127,7 +126,7 @@ days-out figure now being the de-duplicated merged total instead of a naive per-
 
 ## Open questions for review
 
-- **Exposure figure** — confirm $55,725 (code) vs $56,725 (brief prose). See deviation 4.
+- **Exposure figure** — resolved: $55,725 (engine) is canonical; prose corrected. See deviation 4.
 - **v1.4.0 tag** — please push manually; blocked here (deviation 2).
 - **llm.js live adapter** — keep the working v1.4 adapter, or downgrade to throw-only? (deviation 7).
 - **Screenshots** — TODO slots are in the README; the Stage 01 extraction shot is new.
