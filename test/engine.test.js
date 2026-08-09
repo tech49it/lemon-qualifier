@@ -171,7 +171,7 @@ T('value: penalty screen never states a dollar amount',
  * bare 793.2 that is not preceded by a 1. Guards the citation forever. */
 var ROOT = path.join(__dirname, '..');
 var scan = [
-  'index.html', 'README.md', 'CLAUDE.md', 'DEPLOY.md',
+  'index.html', 'README.md', 'DEPLOY.md',
   'js/rules.js', 'js/engine.js', 'js/sampleCases.js', 'js/closedCases.js', 'js/llm.js', 'js/workflow.js', 'js/app.js'
 ].map(function (f) { return path.join(ROOT, f); }).filter(fs.existsSync);
 

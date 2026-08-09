@@ -1,4 +1,4 @@
-© Andre C. Demonstration only — all rights reserved. Not licensed for use, reproduction, or deployment. Production licensing: andre@ciasca.com.
+© Andre C. Demonstration only — all rights reserved. Not licensed for use, reproduction, or deployment.
 
 # Lemon Law Intake Qualifier — v2 (Demo)
 
