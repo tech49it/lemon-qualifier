@@ -20,32 +20,57 @@ thresholds are demo values pending attorney validation.
 
 ## Status
 
-Deployed and live at https://tech49it.github.io/lemon-qualifier/ — version `1.4.0-demo`, test suite passing (`node test/rules.test.js`, 64/64).
+Deployed and live at https://tech49it.github.io/lemon-qualifier/ — version `2.0.0-demo`. Test suites passing: `node test/engine.test.js` (39 assertions) and `node test/rules.test.js` (v1.4 behavior-parity guard).
 
 ## Stack
 
 Vanilla JavaScript (ES5-compatible), HTML5, CSS3. No framework, no build step,
-no runtime dependencies, no backend, no database. Google Fonts with system
+no runtime dependencies, no backend, no database. Provenance typography via
+Google Fonts (Libre Franklin / Source Serif 4 / IBM Plex Mono) with system
 fallbacks. Optional OpenAI API call, off by default.
 
-## Architecture
+## Architecture (v2.0.0 layout)
 
 ```
-index.html            shell: header, toolbar, four panels
-css/styles.css        design system, no framework
-js/rules.js           RULES_CONFIG + evaluateCase() — pure function, no DOM,
-                      no network; runs identically in Node for testing
-js/sampleCases.js     three fictional cases + blank template
+index.html            shell markup + <link>/<script> tags (plain scripts, in order)
+css/styles.css        design system, Stage 01 extraction styles, provenance fonts
+js/rules.js           RULES_CONFIG — the object the attorneys own. DATA ONLY.
+js/engine.js          the pure engine: evaluateCase, estimateValue,
+                      daysOutOfService (range-merge dedup), docFlags,
+                      resolveTrack, computeDeadlines, screenUsedVehicle,
+                      buildTimeline, inputsHash. Zero DOM, zero network;
+                      runs identically in Node for testing.
+js/sampleCases.js     three fictional cases (+ RO facsimile fields) + blank template
 js/closedCases.js     FICTIONAL closed-case sample + findComparables() —
                       pure weighted field matching, no ML, no network
-js/llm.js             summary generator: mock (default) + live OpenAI adapter
+js/llm.js             summary + document-request generator: mock (default)
+                      + live seam (server-side-only; no key ever ships)
+js/workflow.js        governed-intake lifecycle, approval guard, audit log, booking
 js/app.js             UI state and rendering only — zero business logic
+test/engine.test.js   pure-engine assertions (node test/engine.test.js)
+test/rules.test.js    v1.4 behavior-parity suite
 firebase.json         Firebase Hosting config (public dir = root, noindex)
 DEPLOY.md             deploy commands for GitHub Pages / Firebase / Vercel
 ```
 
+Script load order: `rules → engine → sampleCases → closedCases → llm → workflow → app`.
+`rules.js` and `engine.js` both attach to the `LemonRules` namespace (config +
+functions), so `app.js` calls `LemonRules.*` unchanged.
+
+## Two standing rules — do not break these
+
+1. **Business logic never touches the DOM.** All screening/valuation/date math
+   lives in `js/engine.js` (pure functions, no `window`/`document`); `app.js`
+   only renders and wires. If you need a new computation, add it to the engine
+   and call it — never inline a threshold comparison or day-math into a renderer.
+2. **Legal copy, statute citations, disclaimers, the "ships empty by design"
+   roster stance, the "never estimates a penalty amount" and "not a valuation"
+   language are REVIEWED LANGUAGE.** Never alter them without explicit
+   instruction. The § 1793.22 / § 1793.2(d) citations are guarded by a
+   permanent regression assertion in `test/engine.test.js`.
+
 Separation is strict and must stay strict: qualification logic lives only in
-`rules.js`, and `app.js` never makes a screening decision.
+`engine.js`, and `app.js` never makes a screening decision.
 
 ## Design invariants — do not break these
 
