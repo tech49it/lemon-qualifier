@@ -2,7 +2,7 @@
 
 # Lemon Law Intake Qualifier — v2 (Demo)
 
-**Live demo:** [practicadesk.com](https://practicadesk.com) (Cloudflare Access login required) · or open `index.html` locally. No build step, no backend, no dependencies, zero network beyond web fonts.
+**Live:** [practicadesk.com](https://practicadesk.com) is the public landing page. The qualifier demo itself is distributed privately, one gated link per firm (`practicadesk.com/demo/<firm-slug>/`, behind Cloudflare Access) — it isn't linked from the landing page. To run the qualifier directly: open `demo/app/index.html` locally, or `node build.js` and open any of the `dist/demo/*/index.html` outputs. No backend, no runtime dependencies, zero network beyond web fonts.
 
 A working demonstration of a **document-first** intake pipeline for a California lemon law practice. v1 started at the intake form. v2 starts where the firm's actual pain starts: the stack of dealership repair orders — then carries every downstream output forward from v1.4.
 
@@ -49,8 +49,11 @@ The outputs are shaped to drop into whatever case-management system the firm alr
 ## Architecture
 
 ```
-index.html            shell markup + <link>/<script> tags (plain scripts, in order)
-css/styles.css        design system + Stage 01 styles; provenance font tokens
+index.html            public landing page (marketing + HubSpot form) — indexable, no /demo/ links
+robots.txt            Disallow: /demo/ (landing page stays crawlable)
+css/styles.css        demo design system + Stage 01 styles; provenance font tokens
+css/landing.css       landing-page layout only; reuses styles.css's design tokens
+demo/app/index.html   the ONE demo shell — shared, never published under this path
 js/rules.js           RULES_CONFIG — the object the attorneys own (data only)
 js/engine.js          pure engine — evaluateCase, estimateValue, daysOutOfService,
                       docFlags, resolveTrack, computeDeadlines, buildTimeline, …
@@ -60,6 +63,9 @@ js/closedCases.js     FICTIONAL closed-case sample + findComparables()
 js/llm.js             summary + document-request generator: mock (default) + live seam
 js/workflow.js        governed-intake lifecycle, approval guard, audit log, booking
 js/app.js             UI state and rendering only — no business logic
+build.js              zero-dependency build: stamps demo/app/index.html into
+                      dist/demo/<slug>/index.html for each firm slug, copies
+                      the rest of the static tree into dist/ as-is
 test/engine.test.js   39 assertions against the pure engine (node test/engine.test.js)
 test/rules.test.js    v1.4 behavior-parity suite (node test/rules.test.js)
 ```
@@ -68,11 +74,14 @@ test/rules.test.js    v1.4 behavior-parity suite (node test/rules.test.js)
 
 Script load order (plain `<script>` tags, no bundler): `rules → engine → sampleCases → closedCases → llm → workflow → app`.
 
-## Running the tests
+**Per-firm demo routes, one shared bundle.** `demo/app/index.html` references `css/` and `js/` by absolute path, so `node build.js` can stamp that exact same file into `dist/demo/lemonpros/`, `dist/demo/nita/`, and `dist/demo/alpha/` without duplicating the engine, rules, or CSS anywhere — only the thin markup shell exists more than once, and only as a build output (never committed). `demo/app/` itself is never copied into `dist/`, so there's no ungated fourth path serving the same content.
 
-No package.json, no dependencies — just Node:
+## Running the build and tests
+
+No npm packages — just Node:
 
 ```
+node build.js                # writes dist/ — landing page + 3 gated demo slugs
 node test/engine.test.js     # 39 assertions: extraction flags, day-merge, verdicts,
                              # value screen, roster, determinism, statute regression
 node test/rules.test.js      # v1.4 behavior-parity suite

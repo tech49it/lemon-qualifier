@@ -1,0 +1,163 @@
+/* landing.css — public landing page layout. Reuses the design tokens
+ * (colors, fonts) defined in styles.css's :root; adds marketing-page
+ * layout only. No demo panel classes are used here. */
+
+body.landing {
+  font-family: var(--font-ui);
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 0 24px 64px;
+}
+
+.landing-header {
+  padding: 56px 0 8px;
+}
+
+.landing-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.landing-brand .brand-mark {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--lemon);
+  box-shadow: 0 0 0 3px var(--lemon-deep, #7d6300) inset;
+  display: inline-block;
+}
+
+.landing-brand span {
+  font-weight: 600;
+  color: var(--ink-soft);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+.landing-hero h1 {
+  font-size: clamp(32px, 5vw, 48px);
+  line-height: 1.1;
+  margin: 0 0 16px;
+  letter-spacing: -0.01em;
+}
+
+.landing-hero p.lede {
+  font-family: var(--font-serif);
+  font-size: 19px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  max-width: 62ch;
+  margin: 0 0 8px;
+}
+
+.landing-section {
+  margin-top: 56px;
+}
+
+.landing-section h2 {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+  margin: 0 0 18px;
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+@media (max-width: 720px) {
+  .feature-grid { grid-template-columns: 1fr; }
+}
+
+.feature-card {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.feature-card .step {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--accent);
+  margin-bottom: 8px;
+  display: block;
+}
+
+.feature-card h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.feature-card p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.screenshot-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.screenshot-gallery figure {
+  margin: 0;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--panel);
+  box-shadow: var(--shadow-sm);
+}
+
+.screenshot-gallery img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-bottom: 1px solid var(--rule);
+}
+
+.screenshot-gallery figcaption {
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.contact-panel {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  box-shadow: var(--shadow);
+}
+
+.contact-panel p {
+  margin-top: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.hs-form-frame {
+  min-height: 260px;
+}
+
+.landing-footer {
+  margin-top: 64px;
+  padding-top: 24px;
+  border-top: 1px solid var(--rule);
+  color: var(--ink-faint);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.landing-footer a {
+  color: var(--ink-soft);
+}

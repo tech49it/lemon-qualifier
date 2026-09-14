@@ -171,22 +171,22 @@ T('value: penalty screen never states a dollar amount',
  * bare 793.2 that is not preceded by a 1. Guards the citation forever. */
 var ROOT = path.join(__dirname, '..');
 var scan = [
-  'index.html', 'README.md', 'DEPLOY.md',
+  'index.html', 'demo/app/index.html', 'README.md', 'DEPLOY.md',
   'js/rules.js', 'js/engine.js', 'js/sampleCases.js', 'js/closedCases.js', 'js/llm.js', 'js/workflow.js', 'js/app.js'
 ].map(function (f) { return path.join(ROOT, f); }).filter(fs.existsSync);
 
 var badCite = [];
 scan.forEach(function (fp) {
   var txt = fs.readFileSync(fp, 'utf8');
-  if (/(?<!1)793\.2/.test(txt)) badCite.push(path.basename(fp));
+  if (/(?<!1)793\.2/.test(txt)) badCite.push(path.relative(ROOT, fp));
 });
 T('no bare "793.2" citation anywhere (must be 1793.2)', badCite.length === 0);
 
-var idx = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+var idx = fs.readFileSync(path.join(ROOT, 'demo/app/index.html'), 'utf8');
 var rme = fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8');
-T('§ 1793.22 present in index.html', /1793\.22/.test(idx));
+T('§ 1793.22 present in demo/app/index.html', /1793\.22/.test(idx));
 T('§ 1793.22 present in README.md', /1793\.22/.test(rme));
-T('§ 1793.2(d) present in index.html', /1793\.2\(d\)/.test(idx));
+T('§ 1793.2(d) present in demo/app/index.html', /1793\.2\(d\)/.test(idx));
 
 /* ======================================================================= */
 console.log('\n' + count + ' assertions, ' + (failures === 0 ? 'all passed.' : failures + ' FAILED.'));

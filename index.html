@@ -3,155 +3,89 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="robots" content="noindex, nofollow">
-  <title>Lemon Law Intake Qualifier — v2 Demo</title>
-  <!-- Provenance typography: Libre Franklin (interface), Source Serif 4 (attorney
-       prose), IBM Plex Mono (machine-read values). Fonts load when online;
-       system fallbacks in the CSS stacks keep the demo presentable offline. -->
+  <title>Lemon Law Intake Qualifier — Andre C</title>
+  <meta name="description" content="A document-first intake qualifier for California lemon law practices: extracts repair-order data, screens against Song-Beverly/Tanner Act criteria, and drafts an attorney-ready case summary — with human review gated at every step.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="/css/landing.css">
 </head>
-<body>
+<body class="landing">
 
-  <header class="app-header">
-    <div class="brand-row">
+  <header class="landing-header">
+    <div class="landing-brand">
       <span class="brand-mark" aria-hidden="true"></span>
-      <h1 class="brand-title">Lemon Law Intake Qualifier</h1>
-      <span class="brand-sub">Demo build &middot; Andre C &middot; human-in-the-loop by design</span>
+      <span>Andre C &middot; technical demonstration</span>
     </div>
-    <div class="header-banner">
-      <strong>Demonstration only.</strong> All data is fictional. Screening rules are illustrative demo logic pending attorney validation &mdash; nothing here is legal advice or a final decision. Every AI output requires human review before it counts.
+    <div class="landing-hero">
+      <h1>Lemon Law Intake Qualifier</h1>
+      <p class="lede">A document-first intake pipeline for California lemon law practices. It reads the stack of dealership repair orders a firm already has, screens the case against Song-Beverly and Tanner Act criteria, and drafts an attorney-ready case summary — with a human review gate before anything reaches a client or the case file.</p>
     </div>
   </header>
 
-  <div class="toolbar">
-    <span class="toolbar-label">Sample cases</span>
-    <div id="case-chips" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
-    <div class="spacer"></div>
-    <label class="mode-toggle">
-      <input type="checkbox" id="mode-checkbox">
-      <span>Live LLM (default: offline mock)</span>
-    </label>
-    <button class="btn secondary small" id="rules-toggle">Rules — view / edit</button>
-  </div>
-
-  <div class="topline" id="topline" aria-label="Case signals at a glance"></div>
-
-  <!-- STAGE 01 — repair-order extraction (document-first intake) -->
-  <div class="fullwidth-wrap">
-    <section class="panel" id="extraction-panel" aria-label="Repair order extraction">
-      <div class="panel-head">
-        <span class="panel-eyebrow">Stage 01 &middot; machine-read &mdash; verify before use</span>
-        <h2 class="panel-title">Repair orders &mdash; extraction</h2>
+  <section class="landing-section" aria-label="How it works">
+    <h2>How it works</h2>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <span class="step">Stage 01</span>
+        <h3>Repair-order extraction</h3>
+        <p>Reads repair orders and pulls dates, mileage, complaint, and repair-attempt data into a structured record. Low-confidence fields and document conflicts are flagged for a person to verify, not silently accepted.</p>
       </div>
-      <div class="panel-body" id="extraction-body"></div>
-    </section>
-  </div>
-
-  <main class="layout">
-
-    <!-- LEFT: intake form -->
-    <section class="panel" aria-label="Intake form">
-      <div class="panel-head">
-        <span class="panel-eyebrow">Intake</span>
-        <h2 class="panel-title">Case details</h2>
+      <div class="feature-card">
+        <span class="step">Stage 02</span>
+        <h3>Statutory screening</h3>
+        <p>Runs the extracted case against Civ. Code &sect;&nbsp;1793.2 and the &sect;&nbsp;1793.22 presumption, with every threshold held in one attorney-owned config file, tagged "verify with counsel."</p>
       </div>
-      <div class="panel-body" id="intake-form"></div>
-    </section>
-
-    <!-- RIGHT: outputs -->
-    <div class="outputs-column">
-      <section class="panel rules-panel hidden" id="rules-panel" aria-label="Rules configuration">
-        <div class="panel-head">
-          <span class="panel-eyebrow">Configuration</span>
-          <h2 class="panel-title">Screening rules &mdash; the attorneys own these</h2>
-        </div>
-        <div class="panel-body" id="rules-body"></div>
-      </section>
-
-      <section class="panel" aria-label="Qualification assessment">
-        <div class="panel-head">
-          <span class="panel-eyebrow">Output 1</span>
-          <h2 class="panel-title">Qualification assessment</h2>
-        </div>
-        <div class="panel-body" id="assessment-body"></div>
-      </section>
-
-      <section class="panel" aria-label="Procedural track and deadlines">
-        <div class="panel-head">
-          <span class="panel-eyebrow">Output 2</span>
-          <h2 class="panel-title">Procedural track &amp; deadlines</h2>
-        </div>
-        <div class="panel-body" id="track-body"></div>
-      </section>
-
-      <section class="panel" aria-label="Document checklist">
-        <div class="panel-head">
-          <span class="panel-eyebrow">Output 3</span>
-          <h2 class="panel-title">Document checklist</h2>
-        </div>
-        <div class="panel-body" id="checklist-body"></div>
-      </section>
-
-      <section class="panel" aria-label="Attorney intake summary">
-        <div class="panel-head">
-          <span class="panel-eyebrow">Output 4</span>
-          <h2 class="panel-title">Attorney intake summary</h2>
-        </div>
-        <div class="panel-body" id="summary-body"></div>
-      </section>
-
-      <section class="panel" aria-label="Case value and priority">
-        <div class="panel-head">
-          <span class="panel-eyebrow">Output 5</span>
-          <h2 class="panel-title">Case value &amp; priority &mdash; screening view</h2>
-        </div>
-        <div class="panel-body" id="value-body"></div>
-      </section>
-
-      <section class="panel" id="review-panel" aria-label="Review and approval">
-        <div class="panel-head">
-          <span class="panel-eyebrow">Governance</span>
-          <h2 class="panel-title">Review &amp; approval</h2>
-        </div>
-        <div class="panel-body" id="review-body"></div>
-      </section>
-
-      <section class="panel hidden" id="booking-panel" aria-label="Consultation scheduling">
-        <div class="panel-head">
-          <span class="panel-eyebrow">Post-approval</span>
-          <h2 class="panel-title">Consultation scheduling</h2>
-        </div>
-        <div class="panel-body" id="booking-body"></div>
-      </section>
+      <div class="feature-card">
+        <span class="step">Stage 03</span>
+        <h3>Attorney case summary</h3>
+        <p>Drafts a case-value estimate, procedural track, and a plain-English intake summary. Nothing leaves draft status, and nothing books a consultation, until an attorney marks it reviewed.</p>
+      </div>
     </div>
+  </section>
 
-  </main>
+  <section class="landing-section" aria-label="Screenshots">
+    <h2>Screenshots</h2>
+    <div class="screenshot-gallery">
+      <figure>
+        <img src="/docs/screenshot-assessment.png" alt="Qualification assessment screen showing verdict, repair timeline, and criteria ledger" loading="lazy">
+        <figcaption>Qualification assessment — verdict, repair timeline, and a plain-English reason on every criterion.</figcaption>
+      </figure>
+      <figure>
+        <img src="/docs/screenshot-rules.png" alt="Editable screening rules configuration panel" loading="lazy">
+        <figcaption>Screening rules — every threshold editable and tagged "verify with counsel."</figcaption>
+      </figure>
+      <figure>
+        <img src="/docs/screenshot-summary.png" alt="Attorney intake summary held behind a human review gate" loading="lazy">
+        <figcaption>Attorney intake summary — held behind a human-review gate before it counts.</figcaption>
+      </figure>
+    </div>
+    <p style="color:var(--ink-faint); font-size:13px; margin-top:14px;">
+      These are the existing repo screenshots (<code>docs/*.png</code>), carried over from an earlier build pass — the README flags them as due for a recapture from the current v2 flow. Swap them for fresh captures once the live site is up; ping me if you want new placeholder graphics generated instead while you wait on that.
+    </p>
+  </section>
 
-  <div class="fullwidth-wrap">
-    <section class="panel" id="audit-panel" aria-label="Audit log">
-      <div class="panel-head">
-        <span class="panel-eyebrow">Governance</span>
-        <h2 class="panel-title">Audit log</h2>
-      </div>
-      <div class="panel-body" id="audit-body"></div>
-    </section>
-  </div>
+  <section class="landing-section" aria-label="Contact">
+    <h2>Get in touch</h2>
+    <div class="contact-panel">
+      <p>Want a walkthrough, or evaluating this for your firm? Leave your details and I'll follow up.</p>
 
-  <footer class="app-footer">
-    <p class="ip-notice">&copy; Andre C. Demonstration only &mdash; all rights reserved. Not licensed for use, reproduction, or deployment. Production licensing: support@crastu.com.</p>
-    <p>Demo &mdash; preliminary screening only. Attorney review required. Rules are illustrative; verify current statute. Built by Andre C as a technical demonstration; all names, vehicles, dealers, VINs, and records are fictional. Nothing here is legal advice.</p>
-    <p class="footer-notes">Thresholds reference the Song-Beverly Consumer Warranty Act, Civ. Code &sect; 1793.2 et seq., and the Tanner Consumer Protection Act presumption, Civ. Code &sect; 1793.22, as illustrative starting points requiring attorney validation. A non-presumption path under &sect; 1793.2(d) remains available outside the Tanner window. <em>Rodriguez v. FCA US LLC</em> (Cal. 2024) screening asks a question; it does not decide coverage.</p>
+      <!-- HubSpot embedded form. Create the form under HubSpot > Marketing > Forms,
+           then replace the two placeholders below with the real Portal ID and Form ID.
+           See DEPLOY_CHECKLIST.md, step 5. -->
+      <script charset="utf-8" type="text/javascript" src="//js.hsforms.net/forms/embed/PORTAL_ID_PLACEHOLDER.js"></script>
+      <div class="hs-form-frame"
+        data-region="na1"
+        data-form-id="FORM_ID_PLACEHOLDER"
+        data-portal-id="PORTAL_ID_PLACEHOLDER"></div>
+    </div>
+  </section>
+
+  <footer class="landing-footer">
+    <p>&copy; Andre C. Demonstration only &mdash; all rights reserved. Not licensed for use, reproduction, or deployment. Production licensing: support@crastu.com.</p>
+    <p>Built by Andre C (<a href="https://github.com/tech49it">github.com/tech49it</a>) as a technical demonstration. All names, vehicles, dealers, VINs, and records used in the demo are fictional. Nothing here is legal advice.</p>
   </footer>
 
-  <script src="js/rules.js"></script>
-  <script src="js/engine.js"></script>
-  <script src="js/sampleCases.js"></script>
-  <script src="js/closedCases.js"></script>
-  <script src="js/llm.js"></script>
-  <script src="js/workflow.js"></script>
-  <script src="js/app.js"></script>
 </body>
 </html>
