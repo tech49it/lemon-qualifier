@@ -2,7 +2,7 @@
 
 # Lemon Law Intake Qualifier — v2 (Demo)
 
-**Live demo:** [tech49it.github.io/lemon-qualifier](https://tech49it.github.io/lemon-qualifier/) · or open `index.html` in a browser. No build step, no backend, no dependencies, zero network beyond web fonts.
+**Live demo:** [practicadesk.com](https://practicadesk.com) (Cloudflare Access login required) · or open `index.html` locally. No build step, no backend, no dependencies, zero network beyond web fonts.
 
 A working demonstration of a **document-first** intake pipeline for a California lemon law practice. v1 started at the intake form. v2 starts where the firm's actual pain starts: the stack of dealership repair orders — then carries every downstream output forward from v1.4.
 

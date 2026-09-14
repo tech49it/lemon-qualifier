@@ -9,26 +9,26 @@ into the Atrium Firebase project or any shared production infrastructure.**
 
 ---
 
-## Option 1 — GitHub Pages (recommended: one push does repo + live URL)
+## Option 1 — Cloudflare Pages on practicadesk.com (recommended: current setup)
 
-You need the repo on GitHub anyway as portfolio proof. Pages gives you a live
-URL from the same push, zero extra accounts, zero config.
+The repo ships `.github/workflows/deploy.yml`, which publishes to Cloudflare
+Pages on every push to `main` via the official `cloudflare/pages-action`.
+No build step — the workflow deploys the repo root as-is.
 
-```bash
-git init
-git add .
-git commit -m "Lemon Law Intake Qualifier — demo v1"
-git branch -M main
-git remote add origin https://github.com/tech49it/lemon-qualifier.git
-git push -u origin main
-```
+One-time dashboard/registrar setup (nameservers, Pages project, custom
+domain, GitHub secrets, Cloudflare Access password gate) is documented in
+[`DEPLOY_CHECKLIST.md`](DEPLOY_CHECKLIST.md) — none of it can be scripted
+from this repo.
 
-Then on github.com: repo → Settings → Pages → Source: "Deploy from a branch"
-→ branch `main`, folder `/ (root)` → Save.
+Live at: **https://practicadesk.com** (behind Cloudflare Access login)
 
-Live in ~1 minute at: **https://tech49it.github.io/lemon-qualifier/**
+### Retired — GitHub Pages
 
-(Relative asset paths mean the subdirectory URL just works.)
+This project previously deployed to `tech49it.github.io/lemon-qualifier`
+via GitHub Pages. That's being retired in favor of the custom domain above
+plus real access control, since GitHub Pages can't password-gate a site.
+(Relative asset paths mean the old GitHub Pages URL still works if you ever
+re-enable it in repo Settings → Pages, but see step 6 of the checklist.)
 
 ## Option 2 — Firebase Hosting (your stack; a talking point in the room)
 
